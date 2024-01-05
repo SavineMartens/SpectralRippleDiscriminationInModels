@@ -154,79 +154,146 @@ def create_double_spectrum(normal_spectrum_i,
     plt.xlabel('Frequency')
     return fig
 
-
-data_dir = './data/spectrum/'
-double_spectrum_bool = True # show i1 AND s in one fig
-filter_bool = True # filter spike spectrum
-alpha_05_bool = False # use EH with sort of CS off, always the peak in the middle of the electrodes
-
-if filter_bool:
-    filter_str = 'filtered'
-else:
-    filter_str = 'notfiltered'
+def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s,
+                 CS_i, CS_s, CS2_i, CS2_s,
+                 filter_bool=True):
+    fig = plt.figure()
+    bar_width = 15
+    alpha = 0.2
+    #NH
+    plt.subplot(2,1,1)
+    if filter_bool:
+        plt.bar(freq_x_fft, CS_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='orange')
+        plt.bar(freq_x_fft, CS_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='blue')
+        plt.plot(freq_x_fft, CS2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='orange', label='i')
+        plt.plot(freq_x_fft, CS2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='blue', label='s')
+    else:
+        plt.plot(freq_x_fft, CS_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='i', color='orange')
+        plt.plot(freq_x_fft, CS_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='s', color='blue')
+    plt.ylabel('CS (F120) \n normalized spiking')
+    plt.legend()
+    plt.ylim((0,1))
+    plt.vlines(edges, 0, 1.1, color='k')
+    # plt.title('Current steering (F120)')
+    # match NH x-axis
+    plt.xlim((272, np.max(edges)))
     
-filter_order = 4
-cut_off_freq = 100
+    #EH
+    plt.subplot(2,1,2)
+    plt.legend()
+    if filter_bool:
+        plt.bar(freq_x_fft, alpha_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='orange')
+        plt.bar(freq_x_fft, alpha_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='blue')
+        plt.plot(freq_x_fft, alpha2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='orange', label='i')
+        plt.plot(freq_x_fft, alpha2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='blue', label='s')
+    else:
+        plt.plot(freq_x_fft, alpha_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='i', color='orange')
+        plt.plot(freq_x_fft, alpha_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='s', color='blue')
+    plt.xlim((272, np.max(edges)))
+    plt.legend()
+    plt.vlines(edges, 0, 1.1, color='k')
+    plt.ylim((0,1))
+    plt.ylabel('CS off \n normalized spiking')
+    # plt.title('Current steering off')
+    plt.xlabel('Frequency')
+    return fig
 
-type_phase = 'i1' #'i1' / 's'
-if alpha_05_bool:
-    RPO_list = ['0.500','1.414', '2.000', '2.828', '4.000'] # , '2.828'
-else:
-    RPO_list = ['0.500', '1.000', '1.414', '2.000', '2.828', '4.000'] # , '2.828'
+if __name__ == "__main__":
 
+    data_dir = './data/spectrum/'
+    double_spectrum_bool = True # show i1 AND s in one fig
+    versus_alpha = True # 2.828 CS vs CS off
+    filter_bool = True # filter spike spectrum
+    alpha_05_bool = False # use EH with sort of CS off, always the peak in the middle of the electrodes
 
-for r_i, RPO in enumerate(RPO_list):
-    print(RPO) 
-    if double_spectrum_bool:
-        # get NH
-        fname_NH_i = glob.glob(data_dir + '*i1*' + RPO + '*.mat')[0]
-        fname_NH_s = glob.glob(data_dir + '*_s_*' + RPO + '*.mat')[0]
-        normal_spectrum_i, fiber_frequencies = get_normalized_spectrum(fname_NH_i) 
-        normal_spectrum_s, _ =  get_normalized_spectrum(fname_NH_s) 
+    if filter_bool:
+        filter_str = 'filtered'
+    else:
+        filter_str = 'notfiltered'
         
-        # get EH
+    filter_order = 4
+    cut_off_freq = 100
+
+    type_phase = 'i1' #'i1' / 's'
+    if alpha_05_bool:
+        RPO_list = ['0.500','1.414', '2.000', '2.828', '4.000'] # , '2.828'
+    else:
+        RPO_list = ['0.500', '1.000', '1.414', '2.000', '2.828', '4.000'] # , '2.828'
+
+    # for r_i, RPO in enumerate(RPO_list):
+    #     print(RPO) 
+    #     if double_spectrum_bool:
+    #         # get NH
+    #         fname_NH_i = glob.glob(data_dir + '*i1*' + RPO + '*.mat')[0]
+    #         fname_NH_s = glob.glob(data_dir + '*_s_*' + RPO + '*.mat')[0]
+    #         normal_spectrum_i, fiber_frequencies = get_normalized_spectrum(fname_NH_i) 
+    #         normal_spectrum_s, _ =  get_normalized_spectrum(fname_NH_s) 
+            
+    #         # get EH
+    #         fname_EH_i_ = glob.glob(data_dir + '*matrix*i1*'  + RPO + '*.npy')
+    #         fname_EH_s_ = glob.glob(data_dir + '*matrix*_s_*' + RPO + '*.npy')
+    #         if alpha_05_bool:
+    #             alpha_save_str = '_alpha_0.5'
+    #             fname_EH_i = [l for l in fname_EH_i_ if ('alpha' in l)][0]
+    #             fname_EH_s = [l for l in fname_EH_s_ if ('alpha' in l)][0]
+    #         else:
+    #             alpha_save_str = ''
+    #             fname_EH_i = [l for l in fname_EH_i_ if ('alpha' not in l)][0]
+    #             fname_EH_s = [l for l in fname_EH_s_ if ('alpha' not in l)][0]
+    #         electric_spectrum_i, electric_spectrum2_i = get_normalized_spectrum(fname_EH_i, filter_bool)
+    #         electric_spectrum_s, electric_spectrum2_s = get_normalized_spectrum(fname_EH_s, filter_bool)
+
+    #         fig = create_double_spectrum(normal_spectrum_i, 
+    #                                     normal_spectrum_s, 
+    #                                     electric_spectrum_i, 
+    #                                     electric_spectrum_s, 
+    #                                     fiber_frequencies, 
+    #                                     filter_bool, 
+    #                                     electric_spectrum2_i, 
+    #                                     electric_spectrum2_s)
+    #         plt.suptitle('Ripple density: '+ RPO + ' RPO')
+    #         fig.savefig('./figures/spectrum/' + filter_str + '_' + type_scaling_fibres + '_both_' + RPO + alpha_save_str + '.png')
+    #     else:
+    #         # get NH
+    #         fname_NH = glob.glob(data_dir + '*_' +type_phase +'_*' + RPO + '*.mat')[0]
+    #         print(fname_NH)
+    #         normal_spectrum, fiber_frequencies = get_normalized_spectrum(fname_NH)#(np.mean(unfiltered, axis=1)-np.min(np.mean(unfiltered, axis=1)))/(np.max(np.mean(unfiltered, axis=1))-np.min(np.mean(unfiltered, axis=1)))
+            
+    #         # get EH
+    #         fname_EH_ = glob.glob(data_dir + '*matrix*_' + type_phase + '_*'  + RPO + '*.npy')
+    #         if alpha_05_bool:
+    #             alpha_save_str = '_alpha_0.5'
+    #             fname_EH = [l for l in fname_EH_ if ('alpha' in l)][0]
+    #         else:
+    #             alpha_save_str = ''
+    #             fname_EH = [l for l in fname_EH_ if ('alpha' not in l)][0]
+    #         print(fname_EH)
+    #         electric_spectrum, electric_spectrum2 = get_normalized_spectrum(fname_EH, filter_bool)
+            
+    #         fig = create_single_spectrum(normal_spectrum, electric_spectrum, fiber_frequencies, filter_bool, electric_spectrum2=electric_spectrum2)        
+    #         plt.suptitle('Ripple density: '+ type_phase + '_'  + RPO + ' RPO')
+    #         fig.savefig('./figures/spectrum/' + filter_str + '_' + type_scaling_fibres + '_' + type_phase + '_' + RPO + alpha_save_str +'.png')
+
+    if versus_alpha:
+        RPO = '2.828'
+        # get all EH files
         fname_EH_i_ = glob.glob(data_dir + '*matrix*i1*'  + RPO + '*.npy')
         fname_EH_s_ = glob.glob(data_dir + '*matrix*_s_*' + RPO + '*.npy')
-        if alpha_05_bool:
-            alpha_save_str = '_alpha_0.5'
-            fname_EH_i = [l for l in fname_EH_i_ if ('alpha' in l)][0]
-            fname_EH_s = [l for l in fname_EH_s_ if ('alpha' in l)][0]
-        else:
-            alpha_save_str = ''
-            fname_EH_i = [l for l in fname_EH_i_ if ('alpha' not in l)][0]
-            fname_EH_s = [l for l in fname_EH_s_ if ('alpha' not in l)][0]
-        electric_spectrum_i, electric_spectrum2_i = get_normalized_spectrum(fname_EH_i, filter_bool)
-        electric_spectrum_s, electric_spectrum2_s = get_normalized_spectrum(fname_EH_s, filter_bool)
-
-        fig = create_double_spectrum(normal_spectrum_i, 
-                                     normal_spectrum_s, 
-                                     electric_spectrum_i, 
-                                     electric_spectrum_s, 
-                                     fiber_frequencies, 
-                                     filter_bool, 
-                                     electric_spectrum2_i, 
-                                     electric_spectrum2_s)
-        plt.suptitle('Ripple density: '+ RPO + ' RPO')
-        fig.savefig('./figures/spectrum/' + filter_str + '_' + type_scaling_fibres + '_both_' + RPO + alpha_save_str + '.png')
-    else:
-        # get NH
-        fname_NH = glob.glob(data_dir + '*_' +type_phase +'_*' + RPO + '*.mat')[0]
-        print(fname_NH)
-        normal_spectrum, fiber_frequencies = get_normalized_spectrum(fname_NH)#(np.mean(unfiltered, axis=1)-np.min(np.mean(unfiltered, axis=1)))/(np.max(np.mean(unfiltered, axis=1))-np.min(np.mean(unfiltered, axis=1)))
+        # no CS (alpha=0.5)
+        fname_EH_i_alpha05 = [l for l in fname_EH_i_ if ('alpha' in l)][0]
+        fname_EH_s_alpha05 = [l for l in fname_EH_s_ if ('alpha' in l)][0]
+        # CS
+        fname_EH_i_CS = [l for l in fname_EH_i_ if ('alpha' not in l)][0]
+        fname_EH_s_CS = [l for l in fname_EH_s_ if ('alpha' not in l)][0]
         
-        # get EH
-        fname_EH_ = glob.glob(data_dir + '*matrix*_' + type_phase + '_*'  + RPO + '*.npy')
-        if alpha_05_bool:
-            alpha_save_str = '_alpha_0.5'
-            fname_EH = [l for l in fname_EH_ if ('alpha' in l)][0]
-        else:
-            alpha_save_str = ''
-            fname_EH = [l for l in fname_EH_ if ('alpha' not in l)][0]
-        print(fname_EH)
-        electric_spectrum, electric_spectrum2 = get_normalized_spectrum(fname_EH, filter_bool)
-        
-        fig = create_single_spectrum(normal_spectrum, electric_spectrum, fiber_frequencies, filter_bool, electric_spectrum2=electric_spectrum2)        
-        plt.suptitle('Ripple density: '+ type_phase + '_'  + RPO + ' RPO')
-        fig.savefig('./figures/spectrum/' + filter_str + '_' + type_scaling_fibres + '_' + type_phase + '_' + RPO + alpha_save_str +'.png')
+        electric_spectrum_i_alpha05, electric_spectrum2_i_alpha05 = get_normalized_spectrum(fname_EH_i_alpha05, filter_bool)
+        electric_spectrum_s_alpha05, electric_spectrum2_s_alpha05 = get_normalized_spectrum(fname_EH_s_alpha05, filter_bool)
+        electric_spectrum_i_CS, electric_spectrum2_i_CS = get_normalized_spectrum(fname_EH_i_CS, filter_bool)
+        electric_spectrum_s_CS, electric_spectrum2_s_CS = get_normalized_spectrum(fname_EH_s_CS, filter_bool)
 
-plt.show()
+        fig = CS_off_vs_on(alpha_i=electric_spectrum_i_alpha05, alpha_s=electric_spectrum_s_alpha05, alpha2_i=electric_spectrum2_i_alpha05, alpha2_s=electric_spectrum2_s_alpha05,
+                 CS_i=electric_spectrum_i_CS, CS_s=electric_spectrum_s_CS, CS2_i=electric_spectrum2_i_CS, CS2_s=electric_spectrum2_s_CS,
+                 filter_bool=filter_bool)
+        plt.suptitle('Ripple density: ' + RPO + ' RPO')
+        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_' + type_scaling_fibres + 'scaledfibres_' + RPO + 'RPO.png')
+    plt.show()

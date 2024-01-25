@@ -9,6 +9,7 @@ from pymatreader import read_mat
 # [ ] 
 
 
+
 # frequencies in FFT channels
 edges = [340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
 

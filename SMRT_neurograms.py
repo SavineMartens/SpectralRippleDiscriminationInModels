@@ -7,17 +7,17 @@ import yaml
 from pymatreader import read_mat
 
 # to do
-# [ ] y-scale allocated according to FFT
+# [X] y-scale allocated according to FFT -- Frijns says do Greenwood
 # [ ] add color bar to all
-# [ ] find out unit of color bar
+# [X] find out unit of color bar --> spikes/s
 
 
 font_size = 14
 save_dir = './figures/SMRT/'
 
 cmap_type = 'viridis' # 'inferno'/'nipy_spectral'
-
-def ax_colour_map_SMRT_per_kHz(ax, spike_rates_list, Fn_sel, sound_duration, y_axis_str, binsize=0.01, clim=[], norm=None, flim=None):
+    
+def ax_colour_map_SMRT_per_kHz(ax, spike_rates_list, Fn_sel, sound_duration, y_axis_str='Greenwood frequency [kHz]', binsize=0.01, clim=[], norm=None, flim=None):
 
     x = np.arange(binsize, sound_duration+binsize, binsize)
     mesh = ax.pcolormesh(x, Fn_sel, spike_rates_list, cmap=cmap_type, norm=norm) #
@@ -34,7 +34,7 @@ def ax_colour_map_SMRT_per_kHz(ax, spike_rates_list, Fn_sel, sound_duration, y_a
     ax.set_xlim(binsize, sound_duration)
     ax.set_ylabel(y_axis_str, fontsize=font_size-2)
 
-    return ax
+    return mesh, ax
 
 
 
@@ -88,10 +88,12 @@ if __name__ == '__main__':
     sound_duration = 0.5
     flim=None
 
-    electric = True
+    electric = False
     electric_scale = 'greenwood' # 'log_fft', 'lin_fft', 'greenwood' 
-    normal = False
+    normal = True
     data_dir = os.path.join(os.path.dirname(__file__), "data/SMRT/")
+
+    cbar_bool = False
 
     ###########################################################################################################
     # Electric Hearing 
@@ -105,8 +107,8 @@ if __name__ == '__main__':
         
         clim = (0, 1000)
 
-        fname_list = ['2023-02-13_01h47 spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_1', # or 1.5?
-                      '2023-11-24_17h04m14.25s spike_matrix_F120_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_3']
+        fname_list = ['2023-11-24_16h33m43.98s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_1', # or 1.5?
+                      '2023-11-24_16h40m12.69s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_3']
 
         for f_i, fname in enumerate(fname_list):
             print(fname)
@@ -143,17 +145,29 @@ if __name__ == '__main__':
                 y_axis_str = 'Greenwood frequency [kHz]'
                 spike_matrix = spike_rates_list
             RPO = fname[fname.index('width_')+len('width_'):]
-            axe = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_matrix, frequency_list, sound_duration, y_axis_str, binsize=bin_size, clim=clim, norm=norm, flim=flim)
+            [mesh, axe] = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_matrix, frequency_list, sound_duration, y_axis_str, binsize=bin_size, clim=clim, norm=norm, flim=flim)
             axe.set_title(RPO + ' RPO', fontsize=font_size)
             axe.set_xlabel('Time [s]', fontsize=font_size)
+
 
             if 'p' in RPO:
                 RPO.replace('p', '.')
             else:
                 RPO + '.0'
             # plt.title(RPO + ' RPO')
-            time_stamp = fname[:fname.find(' spike')]
-            fig.savefig(save_dir + 'EH_cmap_' + cmap_type + '_clim_' + str(clim) + '_binsize_' +str(bin_size) + '_norm_' + str(norm) + 'NoCbar_'+ electric_scale +'.png')
+        time_stamp = fname[:fname.find(' spike')]
+        if cbar_bool:
+            # standard
+            # fig.colorbar(mesh, ax=axes.ravel().tolist())
+            # adjust location to liking
+            fig.subplots_adjust(right=0.8)
+            cbar_ax = fig.add_axes([0.85, 0.14, 0.03, 0.78])
+            fig.colorbar(mesh, cax=cbar_ax, label='Spike rate [spikes/s]')
+            # cbar_ax.set_label('Spike rate [spikes/s]')
+            cbar_str = 'Cbar'
+        else:
+            cbar_str = 'NoCbar'
+        fig.savefig(save_dir + 'EH_cmap_' + cmap_type + '_clim_' + str(clim) + '_binsize_' +str(bin_size) + '_norm_' + str(norm) + cbar_str +'_'+ electric_scale +'.png')
 
     ###########################################################################################################
     # Normal Hearing 
@@ -181,7 +195,7 @@ if __name__ == '__main__':
             [num_fibers, num_bins_unfiltered] = spikes_unfiltered.shape 
             binsize_unfiltered = t_unfiltered[1]-t_unfiltered[0]
             spike_rates_list = rebin_spikes(spikes_unfiltered, binsize_unfiltered, bin_size)/bin_size
-            axe = ax_colour_map_SMRT_CIAP_per_kHz(axes[f_i], spike_rates_list, fiber_frequencies, sound_duration, binsize=bin_size, clim=clim, norm=norm, flim=flim)
+            [mesh, axe] = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_rates_list, fiber_frequencies*1e-3, sound_duration, binsize=bin_size, clim=clim, norm=norm, flim=flim)
             RPO = fname[fname.index('width_')+len('width_'):fname.index('_2847')]
             
 
@@ -198,7 +212,19 @@ if __name__ == '__main__':
                 norm_str = str(norm)[str(norm).index('colors.')+len('colors.'):str(norm).index(' object')]
             else:
                 norm_str = None
-            fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitleNoCbar.png')
+
+        if cbar_bool:
+            # standard
+            # fig.colorbar(mesh, ax=axes.ravel().tolist())
+            # adjust location to liking
+            fig.subplots_adjust(right=0.8)
+            cbar_ax = fig.add_axes([0.85, 0.06, 0.03, 0.86])
+            fig.colorbar(mesh, cax=cbar_ax, label='Spike rate [spikes/s]')
+            # cbar_ax.set_label('Spike rate [spikes/s]')
+            cbar_str = 'Cbar'
+        else:
+            cbar_str = 'NoCbar'
+        fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitle'+ cbar_str+'.png')
 
     plt.show()
 

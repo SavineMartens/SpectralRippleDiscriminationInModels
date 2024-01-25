@@ -16,6 +16,7 @@ from abt import wav_to_electrodogram
 from matplotlib.patches import Rectangle
 
 data_dir = './data/spectrum' 
+sound_dir = './sounds/spectral ripple/'
 file_str = 'i_'
 
 original_Fs = True
@@ -53,7 +54,7 @@ for i_n, name in enumerate(name_list):
     if 'abt' in data_dir:
          sound_name = abt.sounds[name]
     else:
-         sound_name = data_dir + '\\' + name + '.wav'
+         sound_name = sound_dir + name + '.wav'
     if original_Fs:
         Fs, audio_signal_single = wavfile.read(sound_name) # Fs = 44100
         audio_signal = np.expand_dims(audio_signal_single, axis=0)

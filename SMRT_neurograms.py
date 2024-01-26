@@ -86,10 +86,10 @@ def select_RPO_from_string(fname):
 if __name__ == '__main__':  
     bin_size = 0.005
     sound_duration = 0.5
-    flim=None
+    flim=8 # None
 
-    electric = False
-    electric_scale = 'greenwood' # 'log_fft', 'lin_fft', 'greenwood' 
+    electric = True
+    electric_scale = 'log_fft' # 'log_fft', 'lin_fft', 'greenwood' 
     normal = True
     data_dir = os.path.join(os.path.dirname(__file__), "data/SMRT/")
 
@@ -128,12 +128,11 @@ if __name__ == '__main__':
                                                                             state=config['nerve_state_AB']) # [A]
 
             
-
             if electric_scale == 'log_fft':
                 frequency_list = np.load('./data/EH_freq_vector_electrode_allocation_logspaced.npy')*1e-3
                 fiber_id_list = np.load('./data/fiber_ID_list_FFT.npy')
                 spike_matrix = spike_rates_list[fiber_id_list,:]
-                y_axis_str = 'Frequency [kHz] \n logspaced based on FFT '
+                y_axis_str = 'Frequency [kHz]'# \n logspaced based on FFT '
             elif electric_scale == 'lin_fft':
                 frequency_list = np.load('./data/EH_freq_vector_electrode_allocation_linspaced.npy')*1e-3
                 fiber_id_list = np.load('./data/fiber_ID_list_FFT.npy')
@@ -167,7 +166,7 @@ if __name__ == '__main__':
             cbar_str = 'Cbar'
         else:
             cbar_str = 'NoCbar'
-        fig.savefig(save_dir + 'EH_cmap_' + cmap_type + '_clim_' + str(clim) + '_binsize_' +str(bin_size) + '_norm_' + str(norm) + cbar_str +'_'+ electric_scale +'.png')
+        fig.savefig(save_dir + 'EH_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' +str(bin_size) + '_norm_' + str(norm) + cbar_str +'_'+ electric_scale +'.png')
 
     ###########################################################################################################
     # Normal Hearing 
@@ -182,7 +181,7 @@ if __name__ == '__main__':
         clim=(2000, None)
         norm=None#matplotlib.colors.Normalize() #matplotlib.colors.PowerNorm(.75) #None
         sound_duration = 0.5
-        flim=None
+        # flim=None
         fig, ax = plt.subplots(2,2, figsize= (10,8))
         plt.subplots_adjust(left=0.059, bottom=0.063, right=0.98, top=0.92)
         # fig.set_size_inches((10, 8))
@@ -224,7 +223,7 @@ if __name__ == '__main__':
             cbar_str = 'Cbar'
         else:
             cbar_str = 'NoCbar'
-        fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitle'+ cbar_str+'.png')
+        fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitle'+ cbar_str+'.png')
 
     plt.show()
 

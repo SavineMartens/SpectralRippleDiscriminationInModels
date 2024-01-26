@@ -234,8 +234,10 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
                  v_ellips = True):
     fig = plt.figure()
     bar_width = 15
+    electrode_width = bar_width*3
+    alpha_bar_width = bar_width/2
     alpha = 0.2
-    #NH
+    #CS
     ax=plt.subplot(2,1,1)
     if filter_bool:
         # individual bars
@@ -254,12 +256,19 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
         plt.vlines(edges, 0, 1.1, color='k')
     if v_ellips:
         from matplotlib.patches import Ellipse
-        for x in edges:
-            ax.add_patch(Ellipse((x,0), bar_width*3, 0.15, color='r'))
+        for x_i, x in enumerate(edges):
+            ax.add_patch(Ellipse((x,0), electrode_width, 0.15, color='r'))
+            if x_i>=1:
+                section = (edges[x_i] - edges[x_i-1])/8
+                for b in range(1,8):
+                    x_between = edges[x_i-1]+b*section
+                    # if x_i==15 and b==6:
+                        # breakpoint()
+                    ax.add_patch(Ellipse((x_between,0), alpha_bar_width, 0.1, color='r'))
     # match NH x-axis
     plt.xlim((272, np.max(edges)))
     
-    #EH
+    #CS off
     ax = plt.subplot(2,1,2)
     plt.legend()
     if filter_bool:
@@ -279,8 +288,8 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     # plt.title('Current steering off')
     plt.xlabel('Frequency')
     if v_ellips:
-        for x in edges:
-            ax.add_patch(Ellipse((x,0), bar_width*3, 0.15, color='r'))
+        for x in range(len(edges)-1):
+            ax.add_patch(Ellipse(((edges[x]+edges[x+1])/2,0), bar_width*3, 0.15, color='r'))
     return fig
 
 
@@ -372,7 +381,7 @@ if __name__ == "__main__":
                                             electric_spectrum2_s,
                                             vlines_nh=vlines_nh)
                 plt.suptitle('Ripple density: '+ RPO + ' RPO')
-                fig.savefig('./figures/spectrum/' + filter_str + '_' + type_scaling_fibres + '_both_' + RPO + alpha_save_str + vline_str + '.png')
+                fig.savefig('./figures/spectrum/' + filter_str + '_' + type_scaling_fibres + '_both_' + RPO + alpha_save_str + vline_nh_str + vline_eh_str + '.png')
             if single_spectrum_bool:
                 # get NH
                 fname_NH = glob.glob(data_dir + '*_' +type_phase +'_*' + RPO + '*.mat')[0]
@@ -435,5 +444,5 @@ if __name__ == "__main__":
                  CS_i=electric_spectrum_i_CS, CS_s=electric_spectrum_s_CS, CS2_i=electric_spectrum2_i_CS, CS2_s=electric_spectrum2_s_CS,
                  filter_bool=filter_bool, vlines=vlines_eh, v_ellips=v_ellips)
         plt.suptitle('Ripple density: ' + RPO + ' RPO')
-        # fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + type_scaling_fibres + 'scaledfibres_' + RPO + 'RPO.png')
+        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + type_scaling_fibres + 'scaledfibres_' + v_ellips_str + RPO + 'RPO.png')
     plt.show()

@@ -4,6 +4,9 @@ import glob
 import matplotlib.pyplot as plt
 from pymatreader import read_mat
 
+# TO DO
+# [X] Check new files if they are similar to online ones --> not exactly, but close
+
 type_scaling_fibres = 'log'
 
 # freq_x_fft = np.load('EH_freq_vector_electrode_allocation_'+ type_scaling_fibres + 'spaced.npy')
@@ -45,7 +48,7 @@ for e in range(len(edges)-1):
         freq_fft_band = list(np.linspace(freq_range[0], freq_range[1], int(num_fibers_between_electrode[e]), endpoint=False))
     freq_x_fft.extend(freq_fft_band)
 
-def get_normalized_spectrum(fname, filter_bool=True):
+def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_freq = 100):
     if '.mat' in fname:
         unfiltered, _, _, _, fiber_frequencies, _, _, _ = load_mat_structs_Hamacher(fname, unfiltered_type = 'OG')
         normal_spectrum = (np.mean(unfiltered, axis=1)-np.min(np.mean(unfiltered, axis=1)))/(np.max(np.mean(unfiltered, axis=1))-np.min(np.mean(unfiltered, axis=1)))
@@ -170,12 +173,12 @@ def double_spectrum_one_fig(RPO_list,
         # get EH
         fname_EH_i_ = glob.glob(data_dir + '*matrix*i1*'  + RPO + '*.npy')
         fname_EH_s_ = glob.glob(data_dir + '*matrix*_s_*' + RPO + '*.npy')
-        if alpha_05_bool:
-            fname_EH_i = [l for l in fname_EH_i_ if ('alpha' in l)][0]
-            fname_EH_s = [l for l in fname_EH_s_ if ('alpha' in l)][0]
-        else:
-            fname_EH_i = [l for l in fname_EH_i_ if ('alpha' not in l)][0]
-            fname_EH_s = [l for l in fname_EH_s_ if ('alpha' not in l)][0]
+        # if alpha_05_bool:
+            # fname_EH_i = [l for l in fname_EH_i_ if ('alpha' in l)][0]
+            # fname_EH_s = [l for l in fname_EH_s_ if ('alpha' in l)][0]
+        # else:
+        fname_EH_i = [l for l in fname_EH_i_ if ('alpha' not in l)][0]
+        fname_EH_s = [l for l in fname_EH_s_ if ('alpha' not in l)][0]
         electric_spectrum_i, electric_spectrum2_i = get_normalized_spectrum(fname_EH_i, filter_bool)
         electric_spectrum_s, electric_spectrum2_s = get_normalized_spectrum(fname_EH_s, filter_bool)
         
@@ -186,8 +189,8 @@ def double_spectrum_one_fig(RPO_list,
         plt.bar(fiber_frequencies, normal_spectrum_s, width=bar_width, alpha=alpha, color='blue')
         filter_sig_i = butter_lowpass_filter(normal_spectrum_i, cut_off_freq, len(normal_spectrum_i), filter_order)
         filter_sig_s = butter_lowpass_filter(normal_spectrum_s, cut_off_freq, len(normal_spectrum_s), filter_order)
-        plt.plot(fiber_frequencies, filter_sig_i, color='orange', label='i')
-        plt.plot(fiber_frequencies, filter_sig_s, color='blue', label='s')
+        plt.plot(fiber_frequencies, filter_sig_i, color='orange', label='inverted')
+        plt.plot(fiber_frequencies, filter_sig_s, color='blue', label='standard')
         plt.ylim((0,1))
         plt.ylabel(RPO + ' RPO \n normalized \n spiking')
         plt.legend()
@@ -209,8 +212,8 @@ def double_spectrum_one_fig(RPO_list,
         plt.legend()
         plt.bar(freq_x_fft, electric_spectrum_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='orange')
         plt.bar(freq_x_fft, electric_spectrum_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='blue')
-        plt.plot(freq_x_fft, electric_spectrum2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='orange', label='i')
-        plt.plot(freq_x_fft, electric_spectrum2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='blue', label='s')
+        plt.plot(freq_x_fft, electric_spectrum2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='orange', label='inverted')
+        plt.plot(freq_x_fft, electric_spectrum2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='blue', label='standard')
         plt.ylabel(RPO + ' RPO \n normalized \n spiking')
         plt.xlim((272, np.max(edges)))
         plt.legend()
@@ -300,7 +303,7 @@ if __name__ == "__main__":
     # pick figure
     double_spectrum_bool = False # show i1 AND s in one fig per RPO
     single_spectrum_bool = False
-    double_spectrum_one_fig_bool = False # show i1 AND s in all RPO in one fig
+    double_spectrum_one_fig_bool = True # show i1 AND s in all RPO in one fig
     versus_alpha = True # 2.828 CS vs CS off
 
     # fig characteristics

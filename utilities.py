@@ -94,8 +94,8 @@ def rebin_spikes(spike_list, old_binsize, new_binsize):
 
     return new_spikes_list
 
-def create_EH_freq_vector_electrode_allocation(): # 'log'/'lin'
-    type_scaling_fibres = 'log' 
+def create_EH_freq_vector_electrode_allocation(type_scaling_fibres='log'): # 'log'/'lin'
+    # type_scaling_fibres = 'lin' 
 
     # frequencies in FFT channels
     edges = [340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
@@ -122,7 +122,7 @@ def create_EH_freq_vector_electrode_allocation(): # 'log'/'lin'
 
     # selected fiber IDs:
     fiber_id_list_FFT = np.arange(start=int(np.min(fiber_id_electrode)), stop=int(np.max(fiber_id_electrode)+ half_electrode_range)) # do I need to flip this?
-    # np.save('./data/fiber_ID_list_FFT.npy', fiber_id_list_FFT)
+    np.save('./data/fiber_ID_list_FFT.npy', fiber_id_list_FFT)
 
     # 272 is the frequency edge of an FFT bin one step before
     if type_scaling_fibres == 'log':
@@ -138,8 +138,8 @@ def create_EH_freq_vector_electrode_allocation(): # 'log'/'lin'
             freq_fft_band = list(np.linspace(freq_range[0], freq_range[1], int(num_fibers_between_electrode[e]), endpoint=False))
         freq_x_fft.extend(freq_fft_band)
 
-    np.save('./data/EH_freq_vector_electrode_allocation_'+ type_scaling_fibres + 'spaced.npy', freq_x_fft)
-    # return freq_x_fft, fiber_id_electrode, half_electrode_range
+    # np.save('./data/EH_freq_vector_electrode_allocation_'+ type_scaling_fibres + 'spaced.npy', freq_x_fft)
+    return freq_x_fft, fiber_id_electrode, half_electrode_range
 
 # create_EH_freq_vector_electrode_allocation()
 

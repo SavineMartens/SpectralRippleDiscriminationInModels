@@ -145,7 +145,7 @@ if __name__ == '__main__':
                 spike_matrix = spike_rates_list
             RPO = fname[fname.index('width_')+len('width_'):]
             [mesh, axe] = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_matrix, frequency_list, sound_duration, y_axis_str, binsize=bin_size, clim=clim, norm=norm, flim=flim)
-            axe.set_title(RPO + ' RPO', fontsize=font_size)
+            axe.set_title(RPO + '.0 RPO', fontsize=font_size)
             axe.set_xlabel('Time [s]', fontsize=font_size)
 
 
@@ -200,10 +200,10 @@ if __name__ == '__main__':
 
             if f_i < 2:
                 carrier = fname[fname.index('dens_')+len('dens_'):fname.index('_rate')]
-                axe.set_title(carrier + ' carrier density \n' + RPO + ' RPO', fontsize=font_size)
+                axe.set_title(carrier + ' carrier density \n' + RPO + '.0 RPO', fontsize=font_size)
                 #    axe.set_ylabel(carrier + ' carrier density \n Greenwood frequency [kHz]', fontsize=font_size)
             else:
-                axe.set_title(RPO + ' RPO', fontsize=font_size)
+                axe.set_title(RPO + '.0 RPO', fontsize=font_size)
             if f_i > 1:
                 axe.set_xlabel('Time [s]', fontsize=font_size)
             

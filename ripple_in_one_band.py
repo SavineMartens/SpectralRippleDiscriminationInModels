@@ -6,7 +6,7 @@ from pymatreader import read_mat
 
 # SMRT!!!!
 # [ ] add smrt data to folder?
-# [ ] 
+# [ ] get STRIPES files
 
 
 

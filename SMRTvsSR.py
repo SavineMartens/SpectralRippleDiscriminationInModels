@@ -2,7 +2,8 @@ import numpy as np
 from utilities import *
 import glob
 import matplotlib.pyplot as plt
-
+from scipy.io import wavfile
+from scipy.signal import hilbert
 
 def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_freq = 100):
     if '.mat' in fname:
@@ -19,6 +20,43 @@ def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_f
         else:
             electric_spectrum2 = None
         return electric_spectrum, electric_spectrum2
+
+def get_spectrum(fname):
+    Fs, audio_signal = wavfile.read(fname)
+    FFT = np.fft.rfft(audio_signal) 
+    abs_fourier_transform = np.abs(FFT)
+    power_spectrum = np.square(abs_fourier_transform)
+    frequency = np.linspace(0, Fs/2, len(abs_fourier_transform))
+    max_power = power_spectrum.max()
+    normalized_power = power_spectrum/max_power
+    outline = hilbert(normalized_power)
+    return outline, frequency
+
+def double_sound_spectrum(RPO):
+    SR_sound_dir = './sounds/spectral ripple/'
+    SMRT_sound_dir = './sounds/SMRT/'
+
+    outline_SR, frequency = get_spectrum(glob.glob(SR_sound_dir + '*i1_' + RPO + '.*')[0]) # Fs = 44100
+    outline_SMRT, _ = get_spectrum(glob.glob(SMRT_sound_dir + '*width_*' + RPO + '*')[0]) # Fs = 44100
+
+    fig, axes = plt.subplots(2,1, sharex=True, sharey=True, figsize=(10, 5))
+    plt.subplots_adjust(hspace=0.274)
+    plt.subplot(2,1,1)
+    plt.plot(frequency, outline_SR)
+    plt.title('Spectral ripple')
+    plt.ylabel('Normalized power')
+    plt.xlim(min(frequency), 1e4)
+    plt.ylim(0,1)
+    plt.vlines(5000, 0, 1, colors='red')
+    plt.subplot(2,1,2)
+    plt.plot(frequency, outline_SMRT)
+    plt.title('SMRT')
+    plt.ylabel('Normalized power')
+    plt.vlines(6500, 0, 1, colors='red')
+    plt.show()
+    return fig
+    
+
 
 def double_spectrum_one_fig(RPO_list):
     fig, ax = plt.subplots(len(RPO_list), 2, figsize=(12, 4), sharex=True, sharey=True)
@@ -73,8 +111,13 @@ if __name__ == "__main__":
     cut_off_freq = 100
     RPO = '4'
 
-    fig = double_spectrum_one_fig(RPO)
-    fig.savefig('./figures/SRvsSMRT_filtered' + '_'.join(RPO) + 'RPO.png')
+    # sound spectrum
+    fig = double_sound_spectrum(RPO)
+    fig.savefig('./figures/SRvsSMRT_audio' + '_'.join(RPO) + 'RPO.png')
+    
+    # neural activation
+    # fig = double_spectrum_one_fig(RPO)
+    # fig.savefig('./figures/SRvsSMRT_filtered' + '_'.join(RPO) + 'RPO.png')
     plt.show()
 
   

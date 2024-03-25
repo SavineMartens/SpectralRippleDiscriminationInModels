@@ -143,6 +143,8 @@ for i_n, name in enumerate(name_list):
     RPO = re.search('_(.*)_', name)
     ax1[0,iterator].set_title(RPO.group(1)+ ' RPO' )
 
+    np.save('./data/spectrum/normalized_FFT_bins_'+ name + '.npy', np.squeeze(outline))
+    np.save('./data/spectrum/frequency_vector_FFT.npy', frequency)
 
     Fs = 17400
     # blue line
@@ -175,6 +177,7 @@ for i_n, name in enumerate(name_list):
         max_power_SCS = averaged_power_unit.max()
         normalized_bins = (averaged_power_unit-averaged_power_unit.min())/(max_power_SCS-averaged_power_unit.min()) #
 
+    np.save('./data/spectrum/normalized_SCS_bins'+ name + '.npy', normalized_bins)
     # if use_electrodogram:
     #     elgram, _ , _ = wav_to_electrodogram(sound_name, ramp_bool=False)
     #     bins = np.max(abs(elgram), axis=1)
@@ -191,7 +194,6 @@ for i_n, name in enumerate(name_list):
 
         # winn plot
         if  name[0] == 's':
-
             ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors='deepskyblue', linewidth= 3) # 
             ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors='white', linewidth= 1)
             ax1[1, iterator].vlines(edges[i], previous1, bin, colors='deepskyblue', linewidth= 3) # 

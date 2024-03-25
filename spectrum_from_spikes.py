@@ -182,6 +182,11 @@ def double_spectrum_one_fig(RPO_list,
         electric_spectrum_i, electric_spectrum2_i = get_normalized_spectrum(fname_EH_i, filter_bool)
         electric_spectrum_s, electric_spectrum2_s = get_normalized_spectrum(fname_EH_s, filter_bool)
         
+        electric_spectrum_i = electric_spectrum_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))]
+        electric_spectrum_s = electric_spectrum_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))]
+        electric_spectrum2_i = electric_spectrum2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))]
+        electric_spectrum2_s = electric_spectrum2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))]
+
         #NH
         plt.subplot(len(RPO_list), 2, rr)
         print(rr)
@@ -205,15 +210,20 @@ def double_spectrum_one_fig(RPO_list,
         if rr == 1:
             plt.title('Normal hearing')
         
+        np.save('./data/spectrum/NH_fiber_freqs.npy', fiber_frequencies)
+        np.save('./data/spectrum/NH_i1_'+ RPO +'_1_spectrum.npy', normal_spectrum_i)
+        np.save('./data/spectrum/NH_s_'+ RPO +'_1_spectrum.npy', normal_spectrum_s)
+        np.save('./data/spectrum/NH__filtered_i1_'+ RPO +'_1_spectrum.npy', filter_sig_i)
+        np.save('./data/spectrum/NH__filtered_s_'+ RPO +'_1_spectrum.npy', filter_sig_s)
         rr += 1
         #EH
         plt.subplot(len(RPO_list), 2, rr)
         print(rr)
         plt.legend()
-        plt.bar(freq_x_fft, electric_spectrum_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='orange')
-        plt.bar(freq_x_fft, electric_spectrum_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='blue')
-        plt.plot(freq_x_fft, electric_spectrum2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='orange', label='inverted')
-        plt.plot(freq_x_fft, electric_spectrum2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='blue', label='standard')
+        plt.bar(freq_x_fft, electric_spectrum_i, width=bar_width, alpha=alpha, color='orange')
+        plt.bar(freq_x_fft, electric_spectrum_s, width=bar_width, alpha=alpha, color='blue')
+        plt.plot(freq_x_fft, electric_spectrum2_i, color='orange', label='inverted')
+        plt.plot(freq_x_fft, electric_spectrum2_s, color='blue', label='standard')
         plt.ylabel(RPO + ' RPO \n normalized \n spiking')
         plt.xlim((272, np.max(edges)))
         plt.legend()
@@ -227,6 +237,11 @@ def double_spectrum_one_fig(RPO_list,
         if rr == 2:
             plt.title('Electric hearing')
         rr += 1
+        np.save('./data/spectrum/EH_fiber_freqs.npy', freq_x_fft)
+        np.save('./data/spectrum/EH_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum_i)
+        np.save('./data/spectrum/EH_s_'+ RPO +'_1_spectrum.npy', electric_spectrum_s)
+        np.save('./data/spectrum/EH__filtered_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum2_i)
+        np.save('./data/spectrum/EH__filtered_s_'+ RPO +'_1_spectrum.npy', electric_spectrum2_s)
     return fig
 
 

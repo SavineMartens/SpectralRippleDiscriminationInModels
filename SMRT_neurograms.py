@@ -11,6 +11,7 @@ from pymatreader import read_mat
 # [ ] add color bar to all
 # [X] find out unit of color bar --> spikes/s
 
+dB = 65
 
 font_size = 14
 save_dir = './figures/SMRT/'
@@ -173,10 +174,16 @@ if __name__ == '__main__':
     if normal:
         print('Normal hearing:') 
         # data_dir =  './data/SMRT/' 
-        fname_list = ['PSTH_filter2023-11-24_17-42-22_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_2847CFs',
-                      'PSTH_filter2023-11-24_16-14-12_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_2847CFs',
-                      'PSTH_filter2023-11-24_16-19-59_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2847CFs',
-                      'PSTH_filter2023-11-24_16-24-11_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2847CFs']
+        if dB == 65:
+            fname_list = ['PSTH_filter2023-11-24_17-42-22_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_2847CFs',
+                        'PSTH_filter2023-11-24_16-14-12_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_2847CFs',
+                        'PSTH_filter2023-11-24_16-19-59_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2847CFs',
+                        'PSTH_filter2023-11-24_16-24-11_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2847CFs']
+        if dB == 50: 
+            fname_list = ['PSTH_filter2024-04-02_16-57-24_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_2847CFs',
+                        'PSTH_filter2024-04-02_18-26-57_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_2847CFs',
+                        'PSTH_filter2024-04-02_16-34-06_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2847CFs',
+                        'PSTH_filter2024-04-02_16-56-58_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2847CFs']
 
         clim=(2000, None)
         norm=None#matplotlib.colors.Normalize() #matplotlib.colors.PowerNorm(.75) #None
@@ -223,7 +230,7 @@ if __name__ == '__main__':
             cbar_str = 'Cbar'
         else:
             cbar_str = 'NoCbar'
-        fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitle'+ cbar_str+'.png')
+        fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitle'+ cbar_str+ str(dB)+'dB.png')
 
     plt.show()
 

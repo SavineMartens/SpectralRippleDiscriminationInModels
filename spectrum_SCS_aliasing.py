@@ -29,7 +29,7 @@ name_list = ['s_0.500_1', 'i1_0.500_1', 's_1.414_1', 'i1_1.414_1', 's_2.000_1', 
 num_rows = len(name_list)
 
 use_windowing = True
-use_preemp = True
+use_preemp = False
 use_zeropad = False
 use_mean = False
 
@@ -155,7 +155,6 @@ for i_n, name in enumerate(name_list):
     signal_buffered = abt.buffer.window_buffer(signal_agc)
     signal_fft = abt.filterbank.fft_filterbank(signal_buffered, nFft=256, plot_magnitude_FFT=plot_FFT_signal)
     signal_hilbert = abt.filterbank.hilbert_envelope(signal_fft) # in log2
-
     signal_energy = abt.filterbank.channel_energy(signal_fft, agc.smpGain) # agc.smpGain = [1 x len(sound)-15]
     # Compute channel-by-channel noise reduction gains.
     noise_reduction_gains, *_ = abt.noise_reduction.noise_reduction(signal_energy) 
@@ -177,7 +176,7 @@ for i_n, name in enumerate(name_list):
         max_power_SCS = averaged_power_unit.max()
         normalized_bins = (averaged_power_unit-averaged_power_unit.min())/(max_power_SCS-averaged_power_unit.min()) #
 
-    np.save('./data/spectrum/normalized_SCS_bins'+ name + '.npy', normalized_bins)
+    # np.save('./data/spectrum/normalized_SCS_bins'+ name + '.npy', normalized_bins)
     # if use_electrodogram:
     #     elgram, _ , _ = wav_to_electrodogram(sound_name, ramp_bool=False)
     #     bins = np.max(abs(elgram), axis=1)
@@ -241,7 +240,7 @@ if plot_old:
 
 ax1[0,0].set_ylabel('Acoustic')
 ax1[1,0].set_ylabel('Electric')
-fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipples.png')
+# fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipples.png')
 
 plt.show()
 

@@ -93,7 +93,7 @@ def create_single_spectrum(normal_spectrum, electric_spectrum, fiber_frequencies
     plt.vlines(edges, 0, 1.1, color='k')
     plt.ylabel('normalized spiking EH')
     plt.ylim((0,1))
-    plt.xlabel('Frequency')
+    plt.xlabel('Frequency [Hz]')
     plt.title(fname_EH)
     return fig
 
@@ -150,7 +150,7 @@ def create_double_spectrum(normal_spectrum_i,
         plt.vlines(edges, 0, 1.1, color='k')
     plt.ylim((0,1))
     plt.ylabel('normalized spiking EH')
-    plt.xlabel('Frequency')
+    plt.xlabel('Frequency [Hz]')
     return fig
 
 
@@ -164,7 +164,7 @@ def double_spectrum_one_fig(RPO_list,
     alpha = 0.2
     rr = 1
     for RPO in RPO_list:
-        # get EH
+        # get NH
         fname_NH_i = glob.glob(data_dir + '*i1*' + RPO + '*.mat')[0]
         fname_NH_s = glob.glob(data_dir + '*_s_*' + RPO + '*.mat')[0]
         normal_spectrum_i, fiber_frequencies = get_normalized_spectrum(fname_NH_i) 
@@ -190,18 +190,18 @@ def double_spectrum_one_fig(RPO_list,
         #NH
         plt.subplot(len(RPO_list), 2, rr)
         print(rr)
-        plt.bar(fiber_frequencies, normal_spectrum_i, width=bar_width, alpha=alpha, color='orange')
-        plt.bar(fiber_frequencies, normal_spectrum_s, width=bar_width, alpha=alpha, color='blue')
+        plt.bar(fiber_frequencies, normal_spectrum_i, width=bar_width, alpha=alpha, color=color_i)
+        plt.bar(fiber_frequencies, normal_spectrum_s, width=bar_width, alpha=alpha, color=color_s)
         filter_sig_i = butter_lowpass_filter(normal_spectrum_i, cut_off_freq, len(normal_spectrum_i), filter_order)
         filter_sig_s = butter_lowpass_filter(normal_spectrum_s, cut_off_freq, len(normal_spectrum_s), filter_order)
-        plt.plot(fiber_frequencies, filter_sig_i, color='orange', label='inverted')
-        plt.plot(fiber_frequencies, filter_sig_s, color='blue', label='standard')
+        plt.plot(fiber_frequencies, filter_sig_i, color=color_i, label='inverted')
+        plt.plot(fiber_frequencies, filter_sig_s, color=color_s, label='standard')
         plt.ylim((0,1))
         plt.ylabel(RPO + ' RPO \n normalized \n spiking')
         plt.legend()
         plt.ylim((0,1))
         if rr == 2*len(RPO_list)-1:
-            plt.xlabel('Frequency')
+            plt.xlabel('Frequency [Hz]')
         if vlines_nh:
             plt.vlines(edges, 0, 1.1, color='k')
         # match NH x-axis
@@ -210,20 +210,20 @@ def double_spectrum_one_fig(RPO_list,
         if rr == 1:
             plt.title('Normal hearing')
         
-        np.save('./data/spectrum/NH_fiber_freqs.npy', fiber_frequencies)
-        np.save('./data/spectrum/NH_i1_'+ RPO +'_1_spectrum.npy', normal_spectrum_i)
-        np.save('./data/spectrum/NH_s_'+ RPO +'_1_spectrum.npy', normal_spectrum_s)
-        np.save('./data/spectrum/NH__filtered_i1_'+ RPO +'_1_spectrum.npy', filter_sig_i)
-        np.save('./data/spectrum/NH__filtered_s_'+ RPO +'_1_spectrum.npy', filter_sig_s)
+        # np.save('./data/spectrum/NH_fiber_freqs.npy', fiber_frequencies)
+        # np.save('./data/spectrum/NH_i1_'+ RPO +'_1_spectrum.npy', normal_spectrum_i)
+        # np.save('./data/spectrum/NH_s_'+ RPO +'_1_spectrum.npy', normal_spectrum_s)
+        # np.save('./data/spectrum/NH__filtered_i1_'+ RPO +'_1_spectrum.npy', filter_sig_i)
+        # np.save('./data/spectrum/NH__filtered_s_'+ RPO +'_1_spectrum.npy', filter_sig_s)
         rr += 1
         #EH
         plt.subplot(len(RPO_list), 2, rr)
         print(rr)
         plt.legend()
-        plt.bar(freq_x_fft, electric_spectrum_i, width=bar_width, alpha=alpha, color='orange')
-        plt.bar(freq_x_fft, electric_spectrum_s, width=bar_width, alpha=alpha, color='blue')
-        plt.plot(freq_x_fft, electric_spectrum2_i, color='orange', label='inverted')
-        plt.plot(freq_x_fft, electric_spectrum2_s, color='blue', label='standard')
+        plt.bar(freq_x_fft, electric_spectrum_i, width=bar_width, alpha=alpha, color=color_i)
+        plt.bar(freq_x_fft, electric_spectrum_s, width=bar_width, alpha=alpha, color=color_s)
+        plt.plot(freq_x_fft, electric_spectrum2_i, color=color_i, label='inverted')
+        plt.plot(freq_x_fft, electric_spectrum2_s, color=color_s, label='standard')
         plt.ylabel(RPO + ' RPO \n normalized \n spiking')
         plt.xlim((272, np.max(edges)))
         plt.legend()
@@ -233,15 +233,15 @@ def double_spectrum_one_fig(RPO_list,
         # plt.ylabel('normalized spiking EH')
         # plt.title('EH:' + RPO)
         if rr == 2*len(RPO_list):
-            plt.xlabel('Frequency')
+            plt.xlabel('Frequency [Hz]')
         if rr == 2:
             plt.title('Electric hearing')
         rr += 1
-        np.save('./data/spectrum/EH_fiber_freqs.npy', freq_x_fft)
-        np.save('./data/spectrum/EH_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum_i)
-        np.save('./data/spectrum/EH_s_'+ RPO +'_1_spectrum.npy', electric_spectrum_s)
-        np.save('./data/spectrum/EH__filtered_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum2_i)
-        np.save('./data/spectrum/EH__filtered_s_'+ RPO +'_1_spectrum.npy', electric_spectrum2_s)
+        # np.save('./data/spectrum/EH_fiber_freqs.npy', freq_x_fft)
+        # np.save('./data/spectrum/EH_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum_i)
+        # np.save('./data/spectrum/EH_s_'+ RPO +'_1_spectrum.npy', electric_spectrum_s)
+        # np.save('./data/spectrum/EH__filtered_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum2_i)
+        # np.save('./data/spectrum/EH__filtered_s_'+ RPO +'_1_spectrum.npy', electric_spectrum2_s)
     return fig
 
 
@@ -259,14 +259,14 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     ax=plt.subplot(2,1,1)
     if filter_bool:
         # individual bars
-        plt.bar(freq_x_fft, CS_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='orange')
-        plt.bar(freq_x_fft, CS_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='blue')
+        plt.bar(freq_x_fft, CS_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color=color_i)
+        plt.bar(freq_x_fft, CS_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color=color_s)
         # filtered lines
-        plt.plot(freq_x_fft, CS2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='orange', label='inverted')
-        plt.plot(freq_x_fft, CS2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='blue', label='standard')
+        plt.plot(freq_x_fft, CS2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color=color_i, label='inverted')
+        plt.plot(freq_x_fft, CS2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color=color_s, label='standard')
     else:
-        plt.plot(freq_x_fft, CS_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='i', color='orange')
-        plt.plot(freq_x_fft, CS_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='s', color='blue')
+        plt.plot(freq_x_fft, CS_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='i', color=color_i)
+        plt.plot(freq_x_fft, CS_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='s', color=color_s)
     plt.ylabel('CS (F120) \n normalized spiking')
     plt.legend()
     plt.ylim((0,1))
@@ -275,14 +275,14 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     if v_ellips:
         from matplotlib.patches import Ellipse
         for x_i, x in enumerate(edges):
-            ax.add_patch(Ellipse((x,0), electrode_width, 0.15, color='r'))
+            ax.add_patch(Ellipse((x,0), electrode_width, 0.15, color=color_e))
             if x_i>=1:
                 section = (edges[x_i] - edges[x_i-1])/8
                 for b in range(1,8):
                     x_between = edges[x_i-1]+b*section
                     # if x_i==15 and b==6:
                         # breakpoint()
-                    ax.add_patch(Ellipse((x_between,0), alpha_bar_width, 0.1, color='r'))
+                    ax.add_patch(Ellipse((x_between,0), alpha_bar_width, 0.1, color=color_e))
     # match NH x-axis
     plt.xlim((272, np.max(edges)))
     
@@ -290,13 +290,13 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     ax = plt.subplot(2,1,2)
     plt.legend()
     if filter_bool:
-        plt.bar(freq_x_fft, alpha_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='orange')
-        plt.bar(freq_x_fft, alpha_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color='blue')
-        plt.plot(freq_x_fft, alpha2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='orange', label='inverted')
-        plt.plot(freq_x_fft, alpha2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color='blue', label='standard')
+        plt.bar(freq_x_fft, alpha_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color=color_i)
+        plt.bar(freq_x_fft, alpha_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color=color_s)
+        plt.plot(freq_x_fft, alpha2_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color=color_i, label='inverted')
+        plt.plot(freq_x_fft, alpha2_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], color=color_s, label='standard')
     else:
-        plt.plot(freq_x_fft, alpha_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='i', color='orange')
-        plt.plot(freq_x_fft, alpha_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='s', color='blue')
+        plt.plot(freq_x_fft, alpha_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='i', color=color_i)
+        plt.plot(freq_x_fft, alpha_s[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], label='s', color=color_s)
     plt.xlim((272, np.max(edges)))
     plt.legend()
     if vlines:
@@ -304,17 +304,19 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     plt.ylim((0,1))
     plt.ylabel('CS off \n normalized spiking')
     # plt.title('Current steering off')
-    plt.xlabel('Frequency')
+    plt.xlabel('Frequency [Hz]')
     if v_ellips:
         for x in range(len(edges)-1):
-            ax.add_patch(Ellipse(((edges[x]+edges[x+1])/2,0), bar_width*3, 0.15, color='r'))
+            ax.add_patch(Ellipse(((edges[x]+edges[x+1])/2,0), bar_width*3, 0.15, color=color_e))
     return fig
 
 
 
 if __name__ == "__main__":
 
-    data_dir = './data/spectrum/'
+    dB = 50
+    # data_dir = './data/spectrum/' + str(dB) + 'dB/'
+    data_dir = './data/spectrum/' + str(dB) + 'dB_1903F/'
     # pick figure
     double_spectrum_bool = False # show i1 AND s in one fig per RPO
     single_spectrum_bool = False
@@ -323,7 +325,7 @@ if __name__ == "__main__":
 
     # fig characteristics
     filter_bool = True # filter spike spectrum
-    alpha_05_bool = True # use EH with sort of CS off, always the peak in the middle of the electrodes
+    alpha_05_bool = False # use EH with sort of CS off, always the peak in the middle of the electrodes
     vlines_nh = False
     vlines_eh = False
     v_ellips = True
@@ -331,7 +333,9 @@ if __name__ == "__main__":
     cut_off_freq = 100
     # for single spectrum
     type_phase = 'i1' #'i1' / 's'
-
+    color_s = 'blue'
+    color_i = 'red'
+    color_e = 'magenta'
     # save strings
     if vlines_nh:
         vline_nh_str = 'wVlinesNH'
@@ -355,15 +359,15 @@ if __name__ == "__main__":
         filter_str = 'notfiltered'
 
     # RPO's to plot
-    if alpha_05_bool:
-        RPO_list = ['0.500','1.414', '2.000', '4.000'] # , '2.828'
-    else:
-        RPO_list = ['0.500', '1.000', '1.414', '2.000', '2.828', '4.000'] # , '2.828'
+    # if alpha_05_bool:
+    RPO_list = ['0.500','1.414', '2.000', '4.000'] # , '2.828'
+    # else:
+    #     RPO_list = ['0.500', '1.000', '1.414', '2.000', '2.828', '4.000'] # , '2.828'
 
 
     if double_spectrum_one_fig_bool:
         fig = double_spectrum_one_fig(RPO_list, vlines_nh=vlines_nh, vlines_eh=vlines_eh)
-        fig.savefig('./figures/spectrum/EH_NH_onefig_filtered' + type_scaling_fibres +'spaced_'+ vline_nh_str + vline_eh_str + '_'.join(RPO_list) + 'RPO.png')
+        fig.savefig('./figures/spectrum/EH_NH_onefig_filtered' + type_scaling_fibres +'spaced_'+ vline_nh_str + vline_eh_str + '_'.join(RPO_list) + 'RPO_'+ str(dB)+'dB'+ color_s + color_i +'.png')
 
     if single_spectrum_bool or double_spectrum_bool:
         for r_i, RPO in enumerate(RPO_list):
@@ -462,5 +466,5 @@ if __name__ == "__main__":
                  CS_i=electric_spectrum_i_CS, CS_s=electric_spectrum_s_CS, CS2_i=electric_spectrum2_i_CS, CS2_s=electric_spectrum2_s_CS,
                  filter_bool=filter_bool, vlines=vlines_eh, v_ellips=v_ellips)
         plt.suptitle('Ripple density: ' + RPO + ' RPO')
-        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + type_scaling_fibres + 'scaledfibres_' + v_ellips_str + RPO + 'RPO.png')
+        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + type_scaling_fibres + 'scaledfibres_' + v_ellips_str + RPO + 'RPO'+ str(dB)+'dB'+ color_s + color_i +'.png')
     plt.show()

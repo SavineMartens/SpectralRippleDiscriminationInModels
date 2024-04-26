@@ -11,14 +11,14 @@ from pymatreader import read_mat
 # [ ] add color bar to all
 # [X] find out unit of color bar --> spikes/s
 
-dB = 65
+
 
 font_size = 14
 save_dir = './figures/SMRT/'
 
 cmap_type = 'viridis' # 'inferno'/'nipy_spectral'
     
-def ax_colour_map_SMRT_per_kHz(ax, spike_rates_list, Fn_sel, sound_duration, y_axis_str='Greenwood frequency [kHz]', binsize=0.01, clim=[], norm=None, flim=None):
+def ax_colour_map_SMRT_per_kHz(ax, spike_rates_list, Fn_sel, sound_duration, y_axis_str='Frequency [kHz]', binsize=0.01, clim=[], norm=None, flim=None):
 
     x = np.arange(binsize, sound_duration+binsize, binsize)
     mesh = ax.pcolormesh(x, Fn_sel, spike_rates_list, cmap=cmap_type, norm=norm) #
@@ -89,7 +89,7 @@ if __name__ == '__main__':
     sound_duration = 0.5
     flim=8 # None
 
-    electric = True
+    electric = False
     electric_scale = 'log_fft' # 'log_fft', 'lin_fft', 'greenwood' 
     normal = True
     data_dir = os.path.join(os.path.dirname(__file__), "data/SMRT/")
@@ -142,7 +142,7 @@ if __name__ == '__main__':
             elif electric_scale == 'greenwood':
                 fiber_id_list = range(config['fiber_start'], config['fiber_end'], config['fiber_stepsize'])
                 frequency_list = Fn[fiber_id_list]*1e-3
-                y_axis_str = 'Greenwood frequency [kHz]'
+                y_axis_str = 'Frequency [kHz]'
                 spike_matrix = spike_rates_list
             RPO = fname[fname.index('width_')+len('width_'):]
             [mesh, axe] = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_matrix, frequency_list, sound_duration, y_axis_str, binsize=bin_size, clim=clim, norm=norm, flim=flim)
@@ -173,6 +173,8 @@ if __name__ == '__main__':
     # Normal Hearing 
     if normal:
         print('Normal hearing:') 
+        num_fibers = 1903
+        dB = 50
         # data_dir =  './data/SMRT/' 
         if dB == 65:
             fname_list = ['PSTH_filter2023-11-24_17-42-22_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_2847CFs',
@@ -180,10 +182,16 @@ if __name__ == '__main__':
                         'PSTH_filter2023-11-24_16-19-59_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2847CFs',
                         'PSTH_filter2023-11-24_16-24-11_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2847CFs']
         if dB == 50: 
-            fname_list = ['PSTH_filter2024-04-02_16-57-24_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_2847CFs',
-                        'PSTH_filter2024-04-02_18-26-57_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_2847CFs',
-                        'PSTH_filter2024-04-02_16-34-06_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2847CFs',
-                        'PSTH_filter2024-04-02_16-56-58_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2847CFs']
+            if num_fibers == 2847:
+                fname_list = ['PSTH_filter2024-04-02_16-57-24_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_2847CFs',
+                            'PSTH_filter2024-04-02_18-26-57_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_2847CFs',
+                            'PSTH_filter2024-04-02_16-34-06_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2847CFs',
+                            'PSTH_filter2024-04-02_16-56-58_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2847CFs']
+            if num_fibers == 1903:
+                fname_list = ['PSTH_filter2024-04-16_11-50-31_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_1903CFs',
+                            'PSTH_filter2024-04-16_11-52-24_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_1903CFs',
+                            'PSTH_filter2024-04-16_11-52-40_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_1903CFs',
+                            'PSTH_filter2024-04-16_11-52-45_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_1903CFs']
 
         clim=(2000, None)
         norm=None#matplotlib.colors.Normalize() #matplotlib.colors.PowerNorm(.75) #None
@@ -202,7 +210,7 @@ if __name__ == '__main__':
             binsize_unfiltered = t_unfiltered[1]-t_unfiltered[0]
             spike_rates_list = rebin_spikes(spikes_unfiltered, binsize_unfiltered, bin_size)/bin_size
             [mesh, axe] = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_rates_list, fiber_frequencies*1e-3, sound_duration, binsize=bin_size, clim=clim, norm=norm, flim=flim)
-            RPO = fname[fname.index('width_')+len('width_'):fname.index('_2847')]
+            RPO = fname[fname.index('width_')+len('width_'):fname.index('_' + str(num_fibers))]
             
 
             if f_i < 2:
@@ -230,7 +238,7 @@ if __name__ == '__main__':
             cbar_str = 'Cbar'
         else:
             cbar_str = 'NoCbar'
-        fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitle'+ cbar_str+ str(dB)+'dB.png')
+        fig.savefig(save_dir + 'NH_RPO4vs16_both_density_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' + str(bin_size) + '_norm_' + str(norm_str) + 'NoTitle'+ cbar_str+ str(dB)+'dB' + str(num_fibers) + 'NumFib.png')
 
     plt.show()
 

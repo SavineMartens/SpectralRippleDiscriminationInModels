@@ -1,6 +1,6 @@
 import numpy as np
 from pymatreader import read_mat
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, lfilter
 
 def load_mat_structs_Hamacher(fname, unfiltered_type = 'Hamacher'):
     matfile = read_mat(fname)['structPSTH']
@@ -48,7 +48,6 @@ def butter_lowpass_filter(data, cutoff, fs, order):
     y = filtfilt(b, a, data)
     return y
 
-
 def load_mat_virtual_all_thresholds(matfile, nerve_model_type=3, state=1, array_type =2):
     # for now only received nerve model 3(?) and array type MS
     c = nerve_model_type-1 # cochlear model, nerve_model_type, CM3 is most average according to Randy
@@ -79,6 +78,46 @@ def load_mat_virtual_all_thresholds(matfile, nerve_model_type=3, state=1, array_
 
     return T_levels, M_levels, TI_env_log2, TIa, TIb, Ln, Le, PW, Fn, Fe
 
+def transform_pulse_train_to_121_virtual(pulse_train, weights_matrix):
+    (num_electrodes, num_samples) = weights_matrix.shape
+    num_channels = num_electrodes -1
+    pulse_times, pulse_electrodes = np.where(pulse_train.T < 0)
+    pulse_train121 = np.zeros((121, num_samples))
+    # # turn weights and I_given into 121 integers 
+    weights_121_all_samples = np.zeros(num_samples)
+    for el in np.arange(num_channels):
+        el_pair = [el, el+1]
+        pulse_times_electrode = pulse_times[pulse_electrodes == el]
+        for pt in pulse_times_electrode:
+            weights_pair = weights_matrix[el_pair, pt]
+            # print(weights_pair)
+            if (weights_pair == np.array([1.0, 0.0])).all():
+                weights_121_all_samples[pt] = 1 + el*8
+            elif (weights_pair == np.array([0.875, 0.125]) ).all():
+                weights_121_all_samples[pt] = 2 + el*8
+            elif(weights_pair == np.array([0.75, 0.25]) ).all():
+                weights_121_all_samples[pt] = 3 + el*8
+            elif (weights_pair == np.array([0.625, 0.375]) ).all():
+                weights_121_all_samples[pt] = 4 + el*8
+            elif (weights_pair == np.array([0.5, 0.5]) ).all():
+                weights_121_all_samples[pt] = 5 + el*8
+            elif (weights_pair == np.array([0.375, 0.625]) ).all():
+                weights_121_all_samples[pt] = 6 + el*8
+            elif (weights_pair == np.array([0.25, 0.75]) ).all():
+                weights_121_all_samples[pt] = 7 + el*8
+            elif (weights_pair == np.array([0.125, 0.875]) ).all():
+                weights_121_all_samples[pt] = 8 + el*8
+            elif (weights_pair == np.array([0.0, 1.0]) ).all():
+                weights_121_all_samples[pt] = 9 + el*8
+            else:
+                continue
+            pulse_pair = pulse_train[el_pair, pt]
+            virtual_channel_id = int(weights_121_all_samples[pt] -1)
+            pulse_train121[virtual_channel_id, pt] = np.sum(pulse_pair)# apical + basal
+    kernel = np.array([1, -1]) # biphasic pulses, already negative first pulse
+    pulse_train121 = lfilter(kernel, 1, pulse_train121)
+
+    return pulse_train121
 
 def rebin_spikes(spike_list, old_binsize, new_binsize):
     from decimal import Decimal

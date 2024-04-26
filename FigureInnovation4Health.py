@@ -22,8 +22,8 @@ alpha = 0.2
 for i_n, name in enumerate(name_list):
     previous1 = 0
     previous2 = 0   
-    ################# ACOUSTIG
-    outline = np.load('./data/spectrum/normalized_FFT_bins_'+ name + '.npy')
+    ################# ACOUSTIC
+    outline = np.load('./data/spectrum/Poster/normalized_FFT_bins_'+ name + '.npy')
     # winn plot
     if  name[0] == 's':
         color = 'deepskyblue'
@@ -47,7 +47,7 @@ for i_n, name in enumerate(name_list):
     ax[0,iterator].set_xlim((xlim0, np.max(edges)))
 
     ################# ELECTRIC
-    normalized_bins = np.load('./data/spectrum/normalized_SCS_bins'+ name + '.npy')
+    normalized_bins = np.load('./data/spectrum/Poster/normalized_SCS_bins'+ name + '.npy')
     for i, bin in enumerate(normalized_bins): 
         # winn plot
         if  name[0] == 's':
@@ -92,9 +92,9 @@ for i_n, name in enumerate(name_list):
     #             alpha=0.25))  
     
     ############ NH
-    fiber_frequencies = np.load('./data/spectrum/NH_fiber_freqs.npy')
-    normal_spectrum = np.load('./data/spectrum/NH_'+ name +'_spectrum.npy')
-    filtered_normal_spectrum = np.load('./data/spectrum/NH__filtered_'+ name +'_spectrum.npy')
+    fiber_frequencies = np.load('./data/spectrum/Poster/NH_fiber_freqs.npy')
+    normal_spectrum = np.load('./data/spectrum/Poster/NH_'+ name +'_spectrum.npy')
+    filtered_normal_spectrum = np.load('./data/spectrum/Poster/NH__filtered_'+ name +'_spectrum.npy')
     ax[2,iterator].bar(fiber_frequencies, normal_spectrum, width=bar_width, alpha=alpha, color=color)
     ax[2,iterator].plot(fiber_frequencies, filtered_normal_spectrum, color=color, label=label)
     ax[2,iterator].set_ylim((0,1))
@@ -103,9 +103,9 @@ for i_n, name in enumerate(name_list):
     ax[2,iterator].legend(fontsize=fontsize_label)
 
     ############ EH
-    freq_x_fft = np.load('./data/spectrum/EH_fiber_freqs.npy')
-    electric_spectrum = np.load('./data/spectrum/EH_'+ name +'_spectrum.npy')
-    filtered_electric_spectrum = np.load('./data/spectrum/EH__filtered_'+ name +'_spectrum.npy')
+    freq_x_fft = np.load('./data/spectrum/Poster/EH_fiber_freqs.npy')
+    electric_spectrum = np.load('./data/spectrum/Poster/EH_'+ name +'_spectrum.npy')
+    filtered_electric_spectrum = np.load('./data/spectrum/Poster/EH__filtered_'+ name +'_spectrum.npy')
     ax[3,iterator].bar(freq_x_fft, electric_spectrum, width=bar_width, alpha=alpha, color=color)
     ax[3,iterator].plot(freq_x_fft, filtered_electric_spectrum, color=color, label=label)
     ax[3,0].set_ylabel('Electric hearing \n normalized \n spiking',fontsize=fontsize)

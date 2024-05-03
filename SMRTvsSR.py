@@ -4,7 +4,8 @@ import glob
 import matplotlib.pyplot as plt
 from scipy.io import wavfile
 from scipy.signal import hilbert
-
+# from librosa import load
+import matplotlib.transforms as mtransforms # labeling axes
 
 def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_freq = 100):
     if '.mat' in fname:
@@ -24,6 +25,9 @@ def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_f
 
 
 def get_FFT_spectrum(fname):
+    # if fname[-3:] == 'mp3':
+    #     audio_signal, Fs = load(fname, sr=None)
+    # elif fname[-3:] == 'wav':
     Fs, audio_signal = wavfile.read(fname)
     FFT = np.fft.rfft(audio_signal) 
     abs_fourier_transform = np.abs(FFT)
@@ -44,7 +48,7 @@ def double_sound_spectrum(RPO):
 
     fig, axes = plt.subplots(2,1, sharex=True, sharey=True, figsize=(10, 5))
     plt.subplots_adjust(hspace=0.274)
-    plt.subplot(2,1,1)
+    ax = plt.subplot(2,1,1)
     plt.plot(frequency, outline_SR)
     plt.title('Spectral ripple')
     plt.ylabel('Normalized power')
@@ -53,7 +57,9 @@ def double_sound_spectrum(RPO):
     plt.xlim(min(frequency), 1e4)
     plt.ylim(0,1)
     plt.vlines(5000, 0, 1, colors='red')
-    plt.subplot(2,1,2)
+    ax = plt.subplot(2,1,2)
+    ax.text(-0.015, 1, 'A', transform=ax.transAxes + trans,
+            fontsize=16, verticalalignment='top', color='black')
     plt.plot(frequency, outline_SMRT)
     plt.title('SMRT')
     plt.ylabel('Normalized power')
@@ -62,8 +68,8 @@ def double_sound_spectrum(RPO):
     return fig
     
 
-def double_spectrum_one_fig(RPO_list, NH_dB):
-    fig, ax = plt.subplots(len(RPO_list), 2, figsize=(12, 4), sharex=True, sharey=True)
+def double_spectrum_one_fig(RPO, NH_dB):
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharex=True, sharey=True)
     plt.subplots_adjust(left=0.079, bottom=0.11, right=0.967, top=0.929, wspace=0.105)
     bar_width = 15
     
@@ -72,40 +78,43 @@ def double_spectrum_one_fig(RPO_list, NH_dB):
         # dB_str = '2024-04-02' # 2847
     if NH_dB == 65:
         dB_str = '2023-11-24'
-
+    trans = mtransforms.ScaledTranslation(10/72, -5/72, fig.dpi_scale_trans)
     alpha = 0.2
-    for RPO in RPO_list:
-        # get EH
-        fname_NH_SR = glob.glob(sr_data_dir + '*i1*' + RPO + '_1_*.mat')[0]
-        print('SR:', fname_NH_SR)
-        fname_NH_SMRT = glob.glob(SMRT_data_dir + '*' + dB_str + '*width_*' + RPO + '*.mat')[0]
-        print('SMRT:', fname_NH_SR)
-        normal_spectrum_SR, fiber_frequencies = get_normalized_spectrum(fname_NH_SR) 
-        normal_spectrum_SMRT, _ =  get_normalized_spectrum(fname_NH_SMRT)          
-       
-        #Spectral ripple
-        plt.subplot(len(RPO_list), 2, 1)
-        plt.bar(fiber_frequencies, normal_spectrum_SR, width=bar_width, alpha=alpha, color='blue')
-        filter_sig_i = butter_lowpass_filter(normal_spectrum_SR, cut_off_freq, len(normal_spectrum_SR), filter_order)
-        plt.plot(fiber_frequencies, filter_sig_i, color='blue', label='inverted')
-        plt.xlim(min(fiber_frequencies), 8e3)
-        plt.vlines(5000, 0, 1, colors='red')
-        plt.ylim((0,1))
-        plt.ylabel(RPO + ' RPO \n normalized \n spiking')
-        plt.title('Spectral ripple')
-        plt.xlabel('Frequency [Hz]')
+    # get EH
+    fname_NH_SR = glob.glob(sr_data_dir + '*i1*' + RPO + '*_1_*.mat')[0]
+    print('SR:', fname_NH_SR)
+    fname_NH_SMRT = glob.glob(SMRT_data_dir + '*' + dB_str + '*width_*' + RPO[0] + '*.mat')[0]
+    print('SMRT:', fname_NH_SR)
+    normal_spectrum_SR, fiber_frequencies = get_normalized_spectrum(fname_NH_SR) 
+    normal_spectrum_SMRT, _ =  get_normalized_spectrum(fname_NH_SMRT)          
+    
+    #Spectral ripple
+    ax = plt.subplot(1, 2, 1)
+    ax.text(-0.01, 0.1, 'A', transform=ax.transAxes + trans,
+        fontsize=18, verticalalignment='top', color='white')
+    plt.bar(fiber_frequencies, normal_spectrum_SR, width=bar_width, alpha=alpha, color='blue')
+    filter_sig_i = butter_lowpass_filter(normal_spectrum_SR, cut_off_freq, len(normal_spectrum_SR), filter_order)
+    plt.plot(fiber_frequencies, filter_sig_i, color='blue', label='inverted')
+    plt.xlim(min(fiber_frequencies), 8e3)
+    plt.vlines(5000, 0, 1, colors='red')
+    plt.ylim((0,1))
+    plt.ylabel(RPO + ' RPO \n normalized \n spiking')
+    plt.title('Spectral ripple')
+    plt.xlabel('Frequency [Hz]')
         
-        # SMRT
-        plt.subplot(len(RPO_list), 2, 2)
-        plt.bar(fiber_frequencies, normal_spectrum_SMRT, width=bar_width, alpha=alpha, color='blue')
-        filter_sig_s = butter_lowpass_filter(normal_spectrum_SMRT, cut_off_freq, len(normal_spectrum_SMRT), filter_order)
-        plt.plot(fiber_frequencies, filter_sig_s, color='blue', label='standard')
-        plt.vlines(6500, 0, 1, colors='red')
-        plt.title('SMRT')
-        plt.xlabel('Frequency [Hz]')
-        # plt.show()
-        # x=3
-       
+    # SMRT
+    ax = plt.subplot(1, 2, 2)
+    ax.text(-0.01, 0.1, 'B', transform=ax.transAxes + trans,
+        fontsize=18, verticalalignment='top', color='white')
+    plt.bar(fiber_frequencies, normal_spectrum_SMRT, width=bar_width, alpha=alpha, color='blue')
+    filter_sig_s = butter_lowpass_filter(normal_spectrum_SMRT, cut_off_freq, len(normal_spectrum_SMRT), filter_order)
+    plt.plot(fiber_frequencies, filter_sig_s, color='blue', label='standard')
+    plt.vlines(6500, 0, 1, colors='red')
+    plt.title('SMRT')
+    plt.xlabel('Frequency [Hz]')
+    # plt.show()
+    # x=3
+    
     return fig
 
 
@@ -118,7 +127,7 @@ if __name__ == "__main__":
 
     filter_order = 4
     cut_off_freq = 100
-    RPO = '4'
+    RPO = '4.0'
     NH_dB = 50
 
     sr_data_dir = './data/spectrum/'+str(NH_dB) +'dB_1903F/'

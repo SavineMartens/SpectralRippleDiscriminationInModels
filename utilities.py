@@ -35,7 +35,34 @@ def load_mat_structs_Hamacher(fname, unfiltered_type = 'Hamacher'):
         elif unfiltered_type == 'OG' or unfiltered_type == 'Bruce':
             print('Unfiltered version is Bruce\'s version')
             return spike_rate_unfiltered, spike_rate_filtered_downsampled, sound_name, dBlevel, fiber_frequencies, Fs_down, t_unfiltered, t_filtered_downsampled
-        
+
+def load_matrices_from_vectors_Bruce_struct(fname):
+    matfile = read_mat(fname)['structPSTH']
+    sound_name = matfile['fname']
+    dBlevel = matfile['stimdb']
+    fiber_frequencies = matfile['CF']
+    t_unfiltered = matfile['t_unfiltered']
+    spike_rate_unfiltered = np.zeros((len(fiber_frequencies), len(t_unfiltered)))
+    unfiltered_row_indices = matfile['unfiltered_row_indices'].astype(int)
+    unfiltered_column_indices = matfile['unfiltered_column_indices'].astype(int)
+    unfiltered_values = matfile['unfiltered_values']
+    # fill in matrix
+    for row, column, value in zip(unfiltered_row_indices, unfiltered_column_indices, unfiltered_values):
+        spike_rate_unfiltered[row-1, column-1] = value
+    # Hamacher 
+    Hamacher_neurogram = np.zeros(spike_rate_unfiltered.shape)
+    # new = np.zeros(spike_rate_unfiltered.shape)
+    # for fiber in np.arange(len(fiber_frequencies)):
+        # this one does not have a time delay
+        # Hamacher_neurogram[fiber,:] = discrete_gaussian_filter(spike_rate_unfiltered[fiber,:], 1/1e5, sigma_c=1e-3)
+    print('Don\'t use HAMACHER!!!!!!!!!!!!!!!!!!!!')
+    Hamacher_Fs = 5000
+    Fs_ratio = int(1e5/Hamacher_Fs)
+    spike_rate_filtered_downsampled = Hamacher_neurogram[:,::Fs_ratio] # Hamacher with Fs = 5000 --> 1e5/5e3 = 20
+    t_filtered_downsampled = t_unfiltered[::Fs_ratio]
+    return spike_rate_unfiltered, spike_rate_filtered_downsampled, sound_name, dBlevel, fiber_frequencies, Hamacher_Fs, t_unfiltered, t_filtered_downsampled
+
+
 def find_closest_index(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx

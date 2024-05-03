@@ -7,7 +7,7 @@ from scipy.io import wavfile
 from scipy.signal import hilbert
 from scipy import signal
 from utilities import *
-from SMRTvsSR import get_spectrum
+from SMRTvsSR import get_FFT_spectrum
 
 
 ####################### 
@@ -15,14 +15,15 @@ from SMRTvsSR import get_spectrum
 SR_sound_dir = './sounds/spectral ripple/'
 name_list = ['s_1.000_1', 'i1_1.000_1']
 label_list = ['standard', 'inverted']
+c_list = ['blue', 'red']
 # fig, axes = plt.subplots(2,1, sharex=True, sharey=True, figsize=(10, 5))
 fig = plt.figure(figsize=(8,3))
 plt.subplots_adjust(bottom=0.179)
 plt.xscale('log', base=2)
 plt.xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
 for n, name in enumerate(name_list):
-    outline_SR, frequency = get_spectrum(glob.glob(SR_sound_dir + '*' + name + '.*')[0])
-    plt.plot(frequency, outline_SR, label=label_list[n])
+    outline_SR, frequency = get_FFT_spectrum(glob.glob(SR_sound_dir + '*' + name + '.*')[0])
+    plt.plot(frequency, outline_SR, label=label_list[n], color=c_list[n])
     plt.title('Spectral ripple by Won et al. (1 RPO)', fontsize=18)
     plt.ylabel('Normalized power', fontsize=18)
     plt.xlabel('Frequency [Hz]', fontsize=18)

@@ -3,6 +3,7 @@ from utilities import *
 import glob
 import matplotlib.pyplot as plt
 from pymatreader import read_mat
+import matplotlib.transforms as mtransforms # labeling axes
 
 # TO DO
 # [X] Check new files if they are similar to online ones --> not exactly, but close
@@ -50,7 +51,10 @@ for e in range(len(edges)-1):
 
 def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_freq = 100):
     if '.mat' in fname:
-        unfiltered, _, _, _, fiber_frequencies, _, _, _ = load_mat_structs_Hamacher(fname, unfiltered_type = 'OG')
+        try:
+            unfiltered, _, _, _, fiber_frequencies, _, _, _ = load_mat_structs_Hamacher(fname, unfiltered_type = 'OG')
+        except:
+            unfiltered, _, _, _, fiber_frequencies, _, _, _ = load_matrices_from_vectors_Bruce_struct(fname)
         normal_spectrum = (np.mean(unfiltered, axis=1)-np.min(np.mean(unfiltered, axis=1)))/(np.max(np.mean(unfiltered, axis=1))-np.min(np.mean(unfiltered, axis=1)))
         return normal_spectrum, fiber_frequencies
     if '.npy' in fname:
@@ -157,12 +161,14 @@ def create_double_spectrum(normal_spectrum_i,
 def double_spectrum_one_fig(RPO_list,
                            vlines_nh=False,
                            vlines_eh=False):
-    fig, ax = plt.subplots(len(RPO_list), 2, figsize=(12, 9))
+    fig, axes = plt.subplots(len(RPO_list), 2, figsize=(12, 9))
     plt.subplots_adjust(left=0.079, bottom=0.062, right=0.98, top=0.96, hspace=0.3)
     bar_width = 15
-    
+    labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     alpha = 0.2
+    trans = mtransforms.ScaledTranslation(10/72, -5/72, fig.dpi_scale_trans)
     rr = 1
+    axs=axes.flatten()
     for RPO in RPO_list:
         # get NH
         fname_NH_i = glob.glob(data_dir + '*i1*' + RPO + '*.mat')[0]
@@ -197,6 +203,8 @@ def double_spectrum_one_fig(RPO_list,
         plt.plot(fiber_frequencies, filter_sig_i, color=color_i, label='inverted')
         plt.plot(fiber_frequencies, filter_sig_s, color=color_s, label='standard')
         plt.ylim((0,1))
+        while RPO[-2:] == '00':
+            RPO = RPO[:-2]
         plt.ylabel(RPO + ' RPO \n normalized \n spiking')
         plt.legend()
         plt.ylim((0,1))
@@ -209,7 +217,9 @@ def double_spectrum_one_fig(RPO_list,
         # plt.title('NH:' + RPO)
         if rr == 1:
             plt.title('Normal hearing')
-        
+        axs[rr-1].text(-0.01, 0.18, labels[rr-1], transform=axs[rr-1].transAxes + trans,
+                fontsize=16, verticalalignment='top', fontfamily='Open Sans', color='white')
+                # bbox=dict(facecolor='0.7', edgecolor='none', pad=3.0))
         # np.save('./data/spectrum/NH_fiber_freqs.npy', fiber_frequencies)
         # np.save('./data/spectrum/NH_i1_'+ RPO +'_1_spectrum.npy', normal_spectrum_i)
         # np.save('./data/spectrum/NH_s_'+ RPO +'_1_spectrum.npy', normal_spectrum_s)
@@ -236,12 +246,15 @@ def double_spectrum_one_fig(RPO_list,
             plt.xlabel('Frequency [Hz]')
         if rr == 2:
             plt.title('Electric hearing')
-        rr += 1
+        axs[rr-1].text(-0.01, 0.18, labels[rr-1], transform=axs[rr-1].transAxes + trans,
+                fontsize=16, verticalalignment='top', color='white')
+        rr += 1 
         # np.save('./data/spectrum/EH_fiber_freqs.npy', freq_x_fft)
         # np.save('./data/spectrum/EH_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum_i)
         # np.save('./data/spectrum/EH_s_'+ RPO +'_1_spectrum.npy', electric_spectrum_s)
         # np.save('./data/spectrum/EH__filtered_i1_'+ RPO +'_1_spectrum.npy', electric_spectrum2_i)
         # np.save('./data/spectrum/EH__filtered_s_'+ RPO +'_1_spectrum.npy', electric_spectrum2_s)
+    x=4
     return fig
 
 
@@ -255,8 +268,11 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     electrode_width = bar_width*3
     alpha_bar_width = bar_width/2
     alpha = 0.2
+    trans = mtransforms.ScaledTranslation(10/72, -5/72, fig.dpi_scale_trans)
     #CS
     ax=plt.subplot(2,1,1)
+    ax.text(-0.015, 1, 'A', transform=ax.transAxes + trans,
+                fontsize=16, verticalalignment='top', color='black')
     if filter_bool:
         # individual bars
         plt.bar(freq_x_fft, CS_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color=color_i)
@@ -288,6 +304,8 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     
     #CS off
     ax = plt.subplot(2,1,2)
+    ax.text(-0.015, 1, 'B', transform=ax.transAxes + trans,
+                fontsize=16, verticalalignment='top', color='black')
     plt.legend()
     if filter_bool:
         plt.bar(freq_x_fft, alpha_i[int(min(fiber_id_electrode))-half_electrode_range:int(max(fiber_id_electrode))], width=bar_width, alpha=alpha, color=color_i)
@@ -308,6 +326,7 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     if v_ellips:
         for x in range(len(edges)-1):
             ax.add_patch(Ellipse(((edges[x]+edges[x+1])/2,0), bar_width*3, 0.15, color=color_e))
+    x=3
     return fig
 
 
@@ -320,7 +339,7 @@ if __name__ == "__main__":
     # pick figure
     double_spectrum_bool = False # show i1 AND s in one fig per RPO
     single_spectrum_bool = False
-    double_spectrum_one_fig_bool = True # show i1 AND s in all RPO in one fig
+    double_spectrum_one_fig_bool = False # show i1 AND s in all RPO in one fig
     versus_alpha = True # 2.828 CS vs CS off
 
     # fig characteristics

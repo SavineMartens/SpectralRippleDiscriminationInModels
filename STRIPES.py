@@ -8,7 +8,7 @@ from SMRTvsSR import get_FFT_spectrum
 data_dir = './data/STRIPES/'
 sound_dir = './sounds/STRIPES/'
 
-ripple_list = [4.5, 5.0] # np.arange(1, 5.5, 0.5)
+ripple_list = np.arange(1, 5.5, 0.5)
 fig, ax = plt.subplots(len(ripple_list), 2, figsize=(12, 9))
 
 for rr, ripple_id in enumerate(ripple_list):
@@ -26,8 +26,8 @@ for rr, ripple_id in enumerate(ripple_list):
     cut_off_freq = 100
 
     # sound
-    fname_u = glob.glob(sound_dir + '*u*' + str(ripple_id) + '*')
-    fname_d = glob.glob(sound_dir + '*d*' + str(ripple_id) + '*')
+    fname_u = glob.glob(sound_dir + '*u*' + str(ripple_id) + '*')[0]
+    fname_d = glob.glob(sound_dir + '*d*' + str(ripple_id) + '*')[0]
     get_FFT_spectrum(fname_u)
 
     #NH

@@ -317,13 +317,13 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
         from matplotlib.patches import Ellipse
         for x_i, x in enumerate(edges):
             ax.add_patch(Ellipse((x,0), electrode_width, 0.15, color=color_e))
-            # if x_i>=1:
-                # section = (edges[x_i] - edges[x_i-1])/8
-                # for b in range(1,8):
-                    # x_between = edges[x_i-1]+b*section
+            if x_i>=1:
+                section = (edges[x_i] - edges[x_i-1])/8
+                for b in range(1,8):
+                    x_between = edges[x_i-1]+b*section
                     # if x_i==15 and b==6:
                         # breakpoint()
-                    # ax.add_patch(Ellipse((x_between,0), alpha_bar_width, 0.1, color=color_e))
+                    ax.add_patch(Ellipse((x_between,0), alpha_bar_width, 0.1, color=color_e))
     # match NH x-axis
     plt.xlim((272, np.max(edges)))
     

@@ -1,6 +1,11 @@
 import numpy as np
 from pymatreader import read_mat
-from scipy.signal import butter, filtfilt, lfilter
+from scipy.signal import butter, filtfilt, lfilter, spectrogram
+import audio2numpy as a2n
+import matplotlib.pyplot as plt
+import yaml
+import os
+import math
 
 def load_mat_structs_Hamacher(fname, unfiltered_type = 'Hamacher'):
     matfile = read_mat(fname)['structPSTH']
@@ -146,6 +151,12 @@ def transform_pulse_train_to_121_virtual(pulse_train, weights_matrix):
 
     return pulse_train121
 
+def plot_sound_spectrum(ax, frequency, outline):
+    ax.plot(frequency, outline)
+    ax.set_xscale('log', base=2)
+    ax.set_xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
+    return ax
+
 def rebin_spikes(spike_list, old_binsize, new_binsize):
     from decimal import Decimal
     num_fibers = spike_list.shape[0]
@@ -207,15 +218,207 @@ def create_EH_freq_vector_electrode_allocation(type_scaling_fibres='log'): # 'lo
     # np.save('./data/EH_freq_vector_electrode_allocation_'+ type_scaling_fibres + 'spaced.npy', freq_x_fft)
     return freq_x_fft, fiber_id_electrode, half_electrode_range
 
-# create_EH_freq_vector_electrode_allocation()
-
+# # create_EH_freq_vector_electrode_allocation()
+# edges = [340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
 # lin =  np.load('./data/EH_freq_vector_electrode_allocation_linspaced.npy')
 # log =  np.load('./data/EH_freq_vector_electrode_allocation_logspaced.npy')
-
+# fiber_id = np.load('./data/fiber_ID_list_FFT.npy')
+# # get fiber location and frequency from Randy's file
+# matfile = './data/Fidelity120 HC3A MS All Morphologies 18us CF.mat'
+# mat = read_mat(matfile)
+# m=0
+# # basilar membrane IDs
+# Ln = np.flip(mat['Df120']['Ln'][m]) # [mm] 3200 fibers
+# Le = np.flip(mat['Df120']['Le'][m]) # [mm] 16 electrodes
+# fiber_selection_mm = Ln[fiber_id]
+# Le_location_flipped = Ln.max()-Le 
 # import matplotlib.pyplot as plt
 # plt.figure()
-# plt.scatter(range(len(lin)), lin, label='lin', s=1)
-# plt.scatter(range(len(lin)), log, label='log', s=1)
-# plt.legend()
+# # plt.scatter(range(len(lin)), lin, label='lin', s=1)
+# from_zero_mm = Ln.max()-fiber_selection_mm - (Ln.max()-fiber_selection_mm.max())
+# # plt.scatter(Ln.max()-fiber_selection_mm -(Ln.max()-fiber_selection_mm.max()), log, label='log', s=1)
+# plt.scatter(fiber_selection_mm, log, label='log', s=1)
+# # plt.vlines(Le_location_flipped, 300, 8000)
+# plt.vlines(Le, 300, 8000)
+# # plt.vlines(Ln.max()-Le-(Ln.max()-Le.max()), 300, 8000)
+# plt.xlabel('Position fiber & electrode (mm)')
+# plt.ylabel('Learnt frequency [Hz]')
+# plt.title('Log-scale allocated frequency')
+# # plt.legend()
+
+# # plt.figure()
+# # plt.scatter(Ln.max()-fiber_selection_mm -(Ln.max()-fiber_selection_mm.max()), log, label='log', s=1)
+# # plt.hlines(edges, 0, 19)
+# # plt.xlabel('Position fiber & electrode (mm)')
+# # plt.ylabel('Learnt frequency [Hz]')
+# # plt.title('Log-scale allocated frequency')
 
 # plt.show()
+
+def plot_spectrogram(fname):
+        audio_signal, Fs =a2n.audio_from_file(fname)
+        fig = plt.figure()
+        f, t, Sxx = spectrogram(audio_signal, Fs)
+        plt.pcolormesh(t, f, Sxx, shading='gouraud')
+        plt.ylabel('Frequency [Hz]')
+        plt.xlabel('Time [sec]')
+        plt.ylim((274,8000))
+        return fig
+
+def ax_spectrogram(fname, ax):
+        audio_signal, Fs =a2n.audio_from_file(fname)
+        print(len(audio_signal))
+        f, t, Sxx = spectrogram(audio_signal, Fs)
+        ax.pcolormesh(t, f*1e-3, Sxx, shading='gouraud')
+        # ax.set_ylabel('Frequency [Hz]')
+        # ax.set_xlabel('Time [sec]')
+        ax.set_ylim((0.274, 8))
+        return ax
+
+def ax_neurogram(fname, bin_size, ax, clim=None, flim=None, norm=None, cmap_type = 'viridis'):
+    spike_rate_matrix, fiber_frequencies = load_spike_matrix(fname, bin_size)
+    sound_duration = bin_size*spike_rate_matrix.shape[1]
+    x = np.arange(bin_size, sound_duration+bin_size, bin_size)
+    mesh = ax.pcolormesh(x, fiber_frequencies*1e-3, spike_rate_matrix, cmap=cmap_type, norm=norm) #
+    if clim:
+        mesh.set_clim(clim)
+    if flim:
+        ax.set_ylim((0.274, flim))
+    else:
+        ax.set_ylim((0.274, 6.5))
+    return ax
+
+def Greenwood_function_mm_to_f(mm, max_Ln=35, A = 165.4, alpha = 2.1, k = 0.88):
+    if hasattr(mm, "__len__"): # if vector
+        f = []
+        for m in mm:
+            rel_mm = (max_Ln-m)/max_Ln
+            f.append(A*(10**(alpha*rel_mm)-k))
+    else: # if scalar
+        rel_mm = (max_Ln-mm)/max_Ln
+        f = A*(10**(alpha*rel_mm)-k)
+    return f
+
+def load_spike_matrix(fname, new_bin_size=0.005):
+    if fname[-3:] == 'npy':
+        spike_rates_list = np.load(fname)
+        time = fname[:fname.index('spike_matrix')]
+        config_file = time + 'config_output.yaml'
+        with open(config_file, "r") as yamlfile: 
+            config = yaml.load(yamlfile, Loader=yaml.FullLoader)
+        binsize_original = config['binsize']
+        fiber_frequencies = np.load('./data/EH_freq_vector_electrode_allocation_logspaced.npy')
+        fiber_id_list = np.load('./data/fiber_ID_list_FFT.npy')
+        spikes_matrix = spike_rates_list[fiber_id_list,:]
+    if fname[-3:] == 'mat':
+        try:
+            spikes_matrix, _, _, _, fiber_frequencies, _, t_unfiltered, _ = load_mat_structs_Hamacher(fname)
+        except:
+            spikes_matrix, _, _, _, fiber_frequencies, _, t_unfiltered, _ = load_matrices_from_vectors_Bruce_struct(fname)
+        binsize_original = t_unfiltered[1]-t_unfiltered[0]
+    if new_bin_size !=binsize_original:
+        spike_rate_matrix = rebin_spikes(spikes_matrix, binsize_original, new_bin_size)/new_bin_size
+    else: 
+        spike_rate_matrix = spikes_matrix
+    return spike_rate_matrix, fiber_frequencies
+
+def spike_matrix_to_critical_band(fname, critical_band_type, new_bin_size=0.005):
+    spike_rate_matrix, fiber_frequencies = load_spike_matrix(fname, new_bin_size)
+    # def select_critical_bands(spike_rate_matrix, fiber_frequencies, type='single', num_critical_band = 42, number_of_fibers = 10):
+    # taken from: https://www.sfu.ca/sonic-studio-webdav/handbook/Appendix_E.htmL changed edge 0 >20 according to https://en.wikipedia.org/wiki/Bark_scale
+    if critical_band_type.lower() == 'bark': # Bark scale, N=24
+        centre_frequency_critical_bands =np.array([50, 150, 250, 350, 450, 570, 700, 840, 1000, 1170, 1370, 1600, 
+                                                    1850, 2150, 2500, 2900, 3400, 4000, 4800, 5800, 7000, 8500,10500, 13500])
+        edge_frequency_critical_bands = np.array([20, 100, 200, 300, 400, 510, 630, 770, 920, 1080, 1270, 1480, 1720, 2000, 2320, 
+                                        2700, 3150, 3700, 4400, 5300, 6400, 7700, 9500, 12000, 15500])
+    elif critical_band_type.lower() == 'hamacher': # Hamacher, N=42
+        edges_mm = np.arange(0.25, 32.5, 0.75)[::-1]
+        edge_frequency_critical_bands = Greenwood_function_mm_to_f(edges_mm) # or should the max be max(edges_mm)
+        centre_frequency_critical_bands = edge_frequency_critical_bands[:-1] + np.diff(edge_frequency_critical_bands)/2
+    elif critical_band_type.lower() == 'mel': # Mel scale https://isip.piconepress.com/courses/msstate/ece_8463/lectures/current/lecture_04/lecture_04_05.html
+        centre_frequency_critical_bands = np.concatenate((np.arange(100, 1100, 100), np.array([1149, 1320, 1516, 1741, 2000, 2297, 2639, 3031, 3482, 4000, 4595, 5278, 6063, 6964])))
+        BW = np.concatenate((100*np.ones(9), np.array([124, 160, 184, 211, 242, 278, 320, 367, 422, 484, 556, 639, 734, 843, 969])))
+        edge_frequency_critical_bands = [] 
+        for b in np.arange(len(BW)):
+            edge_frequency_critical_bands.append(centre_frequency_critical_bands[b]-BW[b]/2)
+        edge_frequency_critical_bands.append(centre_frequency_critical_bands[b]+BW[b]/2)
+    # elif critical_band_type.lower() == 'erb': # ERB scale
+    #     pass
+    # elif critical_band_type.lower() == 'semi' or critical_band_type.lower() == 'semitone': 
+    #     pass
+    else:
+        raise ValueError('Don\'t have this option')
+    num_critical_band = len(centre_frequency_critical_bands)
+    start_critical_band = find_closest_index(centre_frequency_critical_bands, fiber_frequencies[0]) # Bruce's lowest possible frequency as input is 125    
+    end_critical_band = find_closest_index(edge_frequency_critical_bands, fiber_frequencies[-1]) # 
+    if num_critical_band == 42:
+        end_critical_band -= 1 # centre frequency is otherwise exactly at edge Bruce matrix
+        start_critical_band += 1
+    list_frequency_idx = []
+    new_fiber_frequencies_CF = []
+    remaining_frequency_edges = edge_frequency_critical_bands[start_critical_band: end_critical_band+1]
+    centre_remaining_frequency_bands = centre_frequency_critical_bands[start_critical_band: end_critical_band]
+    selected_spikes = np.zeros((len(centre_remaining_frequency_bands), spike_rate_matrix.shape[1]))
+    for i in range(start_critical_band, len(centre_frequency_critical_bands[start_critical_band:end_critical_band+1])):
+        low_frequency = edge_frequency_critical_bands[i]
+        high_frequency = edge_frequency_critical_bands[i+1]
+        low_idx = (np.abs(fiber_frequencies - low_frequency)).argmin()
+        idx = (np.abs(fiber_frequencies - centre_frequency_critical_bands[i])).argmin()
+        high_idx = (np.abs(fiber_frequencies - high_frequency)).argmin()
+        list_frequency_idx.append(idx)
+        new_fiber_frequencies_CF.append(fiber_frequencies[idx])
+        selected_spikes[i-start_critical_band,:] = np.sum(spike_rate_matrix[low_idx:high_idx,:], axis=0)
+        # print(i, ':', high_idx-low_idx, 'fibers')
+    # x=3
+    return selected_spikes, new_fiber_frequencies_CF, centre_remaining_frequency_bands, remaining_frequency_edges
+
+def closestDivisors(n):
+    a = round(math.sqrt(n))
+    while n%a > 0: a -= 1
+    return a,n//a
+
+def is_prime(n):
+  for i in range(2,n):
+    if (n%i) == 0:
+      return False
+  return True
+
+def plot_fig_critical_bands(fname_list, critical_band_type, new_bin_size=0.005):
+    for f, fname in enumerate(fname_list):
+        selected_spikes, new_fiber_frequencies_CF, centre_remaining_frequency_bands, remaining_frequency_edges = spike_matrix_to_critical_band(fname, critical_band_type, new_bin_size)
+        num_remaining_crit_bands, _ = selected_spikes.shape
+        if f == 0:
+            number_bands_prime = num_remaining_crit_bands
+            row_plot = 0
+            while row_plot<3:
+                number_bands_prime += 1
+                if not is_prime(number_bands_prime):
+                    row_plot, column_plot = closestDivisors(number_bands_prime)
+            fig, ax = plt.subplots(row_plot, column_plot, sharey=True, sharex=True, figsize=(12, 9))
+            # if row_plot == 4 and column_plot == 6:
+            plt.subplots_adjust(left=0.067, right=0.979, hspace=0.338)
+            # if row_plot == 4 and column_plot == 5:
+                # plt.subplots_adjust(left=0.067, right=0.979, hspace=0.338)
+            axes = ax.flatten()
+
+        if '_u_' in fname:
+            label = 'up'
+            color = 'red'
+        if '_d_' in fname:
+            label = 'down'
+            color = 'blue'
+
+        x = np.arange(new_bin_size, new_bin_size*selected_spikes.shape[1]+new_bin_size, new_bin_size)
+        for n in range(num_remaining_crit_bands):
+            axes[n].plot(x, selected_spikes[n,:], color=color, label=label)
+            # if len(frequency_bands) == num_remaining_crit_bands:
+            axes[n].set_title('Critical band ' + str(n+1) + '\n (CF=' + str(round(centre_remaining_frequency_bands[n])) + ' Hz)')
+            # else:    
+                # axes[n].set_title('Critical band ' + str(n+1) + '\n (' + str(round(centre_remaining_frequency_bands[n])) + '-' + str(round(frequency_bands[n+1])) + 'Hz)')
+            axes[n].set_xlim((x[0], x[-1]))
+            if n == num_remaining_crit_bands-1:
+                axes[n].legend()
+
+    # fig.text(0.08, 0.35, 'Internal Representations (IR)', ha='center', rotation='vertical', fontsize=font_size)
+    fig.text(0.5, 0.04, 'Time [s]', ha='center', fontsize=20)
+    return fig

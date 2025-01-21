@@ -49,6 +49,19 @@ for e in range(len(edges)-1):
         freq_fft_band = list(np.linspace(freq_range[0], freq_range[1], int(num_fibers_between_electrode[e]), endpoint=False))
     freq_x_fft.extend(freq_fft_band)
 
+
+fiber_id_start = int(fiber_id_electrode[0] + half_electrode_range)
+fiber_id_end = int(fiber_id_electrode[-1])
+fiber_list = range(fiber_id_start, fiber_id_end, -1)
+frequency_list = np.load('./data/EH_freq_vector_electrode_allocation_logspaced.npy')
+plt.scatter(Ln[fiber_list], freq_x_fft, s=1)
+plt.scatter(Ln[fiber_list], frequency_list, s=1, color='r')
+plt.vlines(Le, 300, 8000)
+plt.hlines(edges, Ln[fiber_id_end], Ln[fiber_id_start])
+plt.xlabel('Position fiber & electrode [mm]')
+plt.ylabel('Learnt frequency [Hz]')
+plt.title('Log-scale allocated frequency')
+
 def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_freq = 100):
     if '.mat' in fname:
         try:
@@ -61,9 +74,9 @@ def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_f
         spike_matrix = np.load(fname, allow_pickle=True)  
         spike_vector = np.mean(spike_matrix, axis=1)
         electric_spectrum = (spike_vector-np.min(spike_vector))/(np.max(spike_vector)-np.min(spike_vector))   
-        if filter_bool:
-            spike_vector2 = butter_lowpass_filter(spike_vector, cut_off_freq, len(spike_vector), filter_order) # Can't LP f because the Fs is not consistent
-            electric_spectrum2 = (spike_vector2-np.min(spike_vector2))/(np.max(spike_vector2)-np.min(spike_vector2))
+        if filter_bool:     
+            electric_spectrum2 = butter_lowpass_filter(electric_spectrum, cut_off_freq, len(spike_vector), filter_order) # Can't LP f because the Fs is not consistent
+            # electric_spectrum2 = (spike_vector2-np.min(spike_vector2))/(np.max(spike_vector2)-np.min(spike_vector2))
         else:
             electric_spectrum2 = None
         return electric_spectrum, electric_spectrum2
@@ -160,7 +173,8 @@ def create_double_spectrum(normal_spectrum_i,
 
 def double_spectrum_one_fig(RPO_list,
                            vlines_nh=False,
-                           vlines_eh=False):
+                           vlines_eh=False,
+                           octave_spaced=False):
     fig, axes = plt.subplots(len(RPO_list), 2, figsize=(12, 9))
     plt.subplots_adjust(left=0.079, bottom=0.062, right=0.98, top=0.96, hspace=0.3)
     bar_width = 15
@@ -196,6 +210,10 @@ def double_spectrum_one_fig(RPO_list,
         #NH
         plt.subplot(len(RPO_list), 2, rr)
         print(rr)
+        if octave_spaced:
+            plt.xscale('log', base=2)
+            plt.xticks([500, 1000, 2000, 4000, 8000], labels=[ '500', '1000', '2000', '4000', '8000'])
+            bar_width = 8
         plt.bar(fiber_frequencies, normal_spectrum_i, width=bar_width, alpha=alpha, color=color_i)
         plt.bar(fiber_frequencies, normal_spectrum_s, width=bar_width, alpha=alpha, color=color_s)
         filter_sig_i = butter_lowpass_filter(normal_spectrum_i, cut_off_freq, len(normal_spectrum_i), filter_order)
@@ -230,6 +248,9 @@ def double_spectrum_one_fig(RPO_list,
         plt.subplot(len(RPO_list), 2, rr)
         print(rr)
         plt.legend()
+        if octave_spaced:
+            plt.xscale('log', base=2)
+            plt.xticks([500, 1000, 2000, 4000, 8000], labels=['500', '1000', '2000', '4000', '8000'])
         plt.bar(freq_x_fft, electric_spectrum_i, width=bar_width, alpha=alpha, color=color_i)
         plt.bar(freq_x_fft, electric_spectrum_s, width=bar_width, alpha=alpha, color=color_s)
         plt.plot(freq_x_fft, electric_spectrum2_i, color=color_i, label='inverted')
@@ -262,12 +283,13 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
                  CS_i, CS_s, CS2_i, CS2_s, # current steering on
                  filter_bool=True,
                  vlines = False, 
-                 v_ellips = True):
+                 v_ellips = True,
+                 octave_spaced=False):
     fig = plt.figure()
     bar_width = 15
     electrode_width = bar_width*3
     alpha_bar_width = bar_width/2
-    alpha = 0.2
+    alpha = 0.10
     trans = mtransforms.ScaledTranslation(10/72, -5/72, fig.dpi_scale_trans)
     #CS
     ax=plt.subplot(2,1,1)
@@ -286,19 +308,22 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     plt.ylabel('CS (F120) \n normalized spiking')
     plt.legend()
     plt.ylim((0,1))
+    if octave_spaced:
+        plt.xscale('log', base=2)
+        plt.xticks([500, 1000, 2000, 4000, 8000], labels=['500', '1000', '2000', '4000', '8000'])
     if vlines:
         plt.vlines(edges, 0, 1.1, color='k')
     if v_ellips:
         from matplotlib.patches import Ellipse
         for x_i, x in enumerate(edges):
             ax.add_patch(Ellipse((x,0), electrode_width, 0.15, color=color_e))
-            if x_i>=1:
-                section = (edges[x_i] - edges[x_i-1])/8
-                for b in range(1,8):
-                    x_between = edges[x_i-1]+b*section
+            # if x_i>=1:
+                # section = (edges[x_i] - edges[x_i-1])/8
+                # for b in range(1,8):
+                    # x_between = edges[x_i-1]+b*section
                     # if x_i==15 and b==6:
                         # breakpoint()
-                    ax.add_patch(Ellipse((x_between,0), alpha_bar_width, 0.1, color=color_e))
+                    # ax.add_patch(Ellipse((x_between,0), alpha_bar_width, 0.1, color=color_e))
     # match NH x-axis
     plt.xlim((272, np.max(edges)))
     
@@ -323,6 +348,9 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
     plt.ylabel('CS off \n normalized spiking')
     # plt.title('Current steering off')
     plt.xlabel('Frequency [Hz]')
+    if octave_spaced:
+        plt.xscale('log', base=2)
+        plt.xticks([500, 1000, 2000, 4000, 8000], labels=['500', '1000', '2000', '4000', '8000'])
     if v_ellips:
         for x in range(len(edges)-1):
             ax.add_patch(Ellipse(((edges[x]+edges[x+1])/2,0), bar_width*3, 0.15, color=color_e))
@@ -341,6 +369,11 @@ if __name__ == "__main__":
     single_spectrum_bool = False
     double_spectrum_one_fig_bool = False # show i1 AND s in all RPO in one fig
     versus_alpha = True # 2.828 CS vs CS off
+    octave_spaced = True 
+    if octave_spaced:
+        octave_str = 'octave_spaced'
+    else:
+        octave_str = ''
 
     # fig characteristics
     filter_bool = True # filter spike spectrum
@@ -354,7 +387,7 @@ if __name__ == "__main__":
     type_phase = 'i1' #'i1' / 's'
     color_s = 'blue'
     color_i = 'red'
-    color_e = 'magenta'
+    color_e = 'orange'
     # save strings
     if vlines_nh:
         vline_nh_str = 'wVlinesNH'
@@ -385,8 +418,8 @@ if __name__ == "__main__":
 
 
     if double_spectrum_one_fig_bool:
-        fig = double_spectrum_one_fig(RPO_list, vlines_nh=vlines_nh, vlines_eh=vlines_eh)
-        fig.savefig('./figures/spectrum/EH_NH_onefig_filtered' + type_scaling_fibres +'spaced_'+ vline_nh_str + vline_eh_str + '_'.join(RPO_list) + 'RPO_'+ str(dB)+'dB'+ color_s + color_i +'.png')
+        fig = double_spectrum_one_fig(RPO_list, vlines_nh=vlines_nh, vlines_eh=vlines_eh, octave_spaced=octave_spaced)
+        fig.savefig('./figures/spectrum/EH_NH_onefig_filtered' + type_scaling_fibres +'spaced_'+ vline_nh_str + vline_eh_str + octave_str + '_'.join(RPO_list) + 'RPO_'+ str(dB)+'dB'+ color_s + color_i +'.png')
 
     if single_spectrum_bool or double_spectrum_bool:
         for r_i, RPO in enumerate(RPO_list):
@@ -483,7 +516,7 @@ if __name__ == "__main__":
 
         fig = CS_off_vs_on(alpha_i=electric_spectrum_i_alpha05, alpha_s=electric_spectrum_s_alpha05, alpha2_i=electric_spectrum2_i_alpha05, alpha2_s=electric_spectrum2_s_alpha05,
                  CS_i=electric_spectrum_i_CS, CS_s=electric_spectrum_s_CS, CS2_i=electric_spectrum2_i_CS, CS2_s=electric_spectrum2_s_CS,
-                 filter_bool=filter_bool, vlines=vlines_eh, v_ellips=v_ellips)
+                 filter_bool=filter_bool, vlines=vlines_eh, v_ellips=v_ellips, octave_spaced=octave_spaced)
         plt.suptitle('Ripple density: ' + RPO + ' RPO')
-        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + type_scaling_fibres + 'scaledfibres_' + v_ellips_str + RPO + 'RPO'+ str(dB)+'dB'+ color_s + color_i +'.png')
+        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + type_scaling_fibres + 'scaledfibres_' + v_ellips_str + RPO + 'RPO'+ str(dB)+'dB'+ color_s + color_i + octave_str + '.png')
     plt.show()

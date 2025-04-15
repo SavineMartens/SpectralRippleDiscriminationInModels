@@ -3,9 +3,11 @@ from pymatreader import read_mat
 from scipy.signal import butter, filtfilt, lfilter, spectrogram
 import audio2numpy as a2n
 import matplotlib.pyplot as plt
+import load_gekke_matlab
 import yaml
 import os
 import math
+import glob
 
 def load_mat_structs_Hamacher(fname, unfiltered_type = 'Hamacher'):
     matfile = read_mat(fname)['structPSTH']
@@ -80,6 +82,28 @@ def butter_lowpass_filter(data, cutoff, fs, order):
     y = filtfilt(b, a, data)
     return y
 
+def symmetric_moving_average(data, window_size):
+    """
+    Calculate the symmetric moving average of a data array.
+    
+    Args:
+        data (list or np.ndarray): Input data.
+        window_size (int): Size of the moving window (should be odd for symmetry).
+    
+    Returns:
+        np.ndarray: Smoothed data using symmetric moving average.
+    """
+    if window_size % 2 == 0:
+        # raise ValueError("Window size must be odd for symmetry.")
+        window_size += 1
+    
+    half_window = window_size // 2
+    padded_data = np.pad(data, (half_window, half_window), mode='edge')
+    kernel = np.ones(window_size) / window_size
+    smoothed_data = np.convolve(padded_data, kernel, mode='valid')
+    
+    return smoothed_data
+
 def load_mat_virtual_all_thresholds(matfile, nerve_model_type=3, state=1, array_type =2):
     # for now only received nerve model 3(?) and array type MS
     c = nerve_model_type-1 # cochlear model, nerve_model_type, CM3 is most average according to Randy
@@ -109,6 +133,44 @@ def load_mat_virtual_all_thresholds(matfile, nerve_model_type=3, state=1, array_
     # x=3
 
     return T_levels, M_levels, TI_env_log2, TIa, TIb, Ln, Le, PW, Fn, Fe
+
+def load_cochlear_parms_and_pulse_train(data_dir, matfile_thresholds, f_elgram):
+    pulse_train = read_mat(os.path.join(data_dir, f_elgram + '.mat'))['electrodogram']
+    matrix_denom = f_elgram[f_elgram.find('TPD')+len('TPD'):f_elgram.find('TPD')+len('TPD')+3]
+    signal_period = float(f_elgram[f_elgram.find('_SiPe')+len('_SiPe'):f_elgram.rfind('_elec')])*1e-6 # [s]
+    c = int(matrix_denom[0])-1
+    a = int(matrix_denom[1])-1
+    m = int(matrix_denom[2])-1
+
+    threshold_dir = os.path.join(os.path.dirname(__file__), "data")
+
+    # load thresholds
+    T_levels = np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir, matfile_thresholds + '.mat'), 'TPD', 'T')[c,a,m])*1e-3 # [A]
+    M_levels = np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir, matfile_thresholds + '.mat'), 'TPD', 'M')[c,a,m])*1e-3 # [A]
+    I_det_Cochlear = np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir, matfile_thresholds + '.mat'), 'TPD', 'TI')[c,a,m])*1e-3 # [A]
+    Ln = np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir, matfile_thresholds + '.mat'), 'TPD', 'Ln')[c,a,m]) # 3200 fibres
+    Fn = np.flip(np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir, matfile_thresholds + '.mat'), 'TPD', 'Fn')[c,a,m]))*1e3 # [Hz] 3200 fibres
+    Le = np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir, matfile_thresholds + '.mat'), 'TPD', 'Le')[c,a,m]) # 22 electrodes
+    PW_real = np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir,matfile_thresholds + '.mat'), 'TPD', 'Tphase')[c,a,m])*1e-6 # [s]
+    IPG = np.squeeze(load_gekke_matlab.load_matlab_met_gekke_nested_shit(os.path.join(threshold_dir,matfile_thresholds + '.mat'), 'TPD', 'IPG')[c,a,m])*1e-6 # [s]
+    # electrode 1 = basal
+    if 'double' in matfile_thresholds:
+        I_det = np.flipud(I_det_Cochlear)
+    else:
+        # I_det = np.flipud(I_det_Cochlear)
+        I_det_LUMC = np.flipud(np.fliplr(I_det_Cochlear))
+        I_det = I_det_LUMC
+    # print('test')
+    # I_det = I_det_Cochlear
+    Ln = np.sort(Ln)[::-1] # should be in decending order
+    Le = np.sort(Le)[::-1] # should be in decending order
+
+    # for e in range(10):
+        # plt.scatter(range(I_det.shape[0]), I_det[:,e*2], label='electrode ' + str(2*e+1))
+    # plt.legend()
+    # breakpoint()
+
+    return pulse_train, signal_period, T_levels, M_levels, Ln, Le, I_det, PW_real, IPG, Fn
 
 def transform_pulse_train_to_121_virtual(pulse_train, weights_matrix):
     (num_electrodes, num_samples) = weights_matrix.shape
@@ -303,7 +365,7 @@ def load_spike_matrix(fname, new_bin_size=0.005):
     if fname[-3:] == 'npy':
         spike_rates_list = np.load(fname)
         time = fname[:fname.index('spike_matrix')]
-        config_file = time + 'config_output.yaml'
+        config_file = glob.glob(time + 'config_output*.yaml')[0]
         with open(config_file, "r") as yamlfile: 
             config = yaml.load(yamlfile, Loader=yaml.FullLoader)
         binsize_original = config['binsize']
@@ -342,6 +404,10 @@ def spike_matrix_to_critical_band(fname, critical_band_type, new_bin_size=0.005)
         for b in np.arange(len(BW)):
             edge_frequency_critical_bands.append(centre_frequency_critical_bands[b]-BW[b]/2)
         edge_frequency_critical_bands.append(centre_frequency_critical_bands[b]+BW[b]/2)
+    elif critical_band_type.lower() == 'slim': # N=171
+        edges_mm = np.arange(0.25, 32.5, 0.75/4)[::-1]
+        edge_frequency_critical_bands = Greenwood_function_mm_to_f(edges_mm) # or should the max be max(edges_mm)
+        centre_frequency_critical_bands = edge_frequency_critical_bands[:-1] + np.diff(edge_frequency_critical_bands)/2
     # elif critical_band_type.lower() == 'erb': # ERB scale
     #     pass
     # elif critical_band_type.lower() == 'semi' or critical_band_type.lower() == 'semitone': 
@@ -387,6 +453,9 @@ def plot_fig_critical_bands(fname_list, critical_band_type, new_bin_size=0.005):
     for f, fname in enumerate(fname_list):
         selected_spikes, new_fiber_frequencies_CF, centre_remaining_frequency_bands, remaining_frequency_edges = spike_matrix_to_critical_band(fname, critical_band_type, new_bin_size)
         num_remaining_crit_bands, _ = selected_spikes.shape
+        if 'SMRT' in fname and num_remaining_crit_bands == 115:
+            selected_spikes = selected_spikes[:-20,:]
+            num_remaining_crit_bands = 95
         if f == 0:
             number_bands_prime = num_remaining_crit_bands
             row_plot = 0
@@ -407,6 +476,21 @@ def plot_fig_critical_bands(fname_list, critical_band_type, new_bin_size=0.005):
         if '_d_' in fname:
             label = 'down'
             color = 'blue'
+        if '_i1_' in fname:
+            label = 'inverted'
+            color = 'red'
+        if '_s_' in fname:
+            label = 'standard'
+            color = 'blue'
+        if 'width_' in fname:
+            if 'width_20' in fname:
+                label = '20 RPO'
+                color = 'red'
+            else:
+                label = 'X RPO'
+                color = 'blue'
+
+
 
         x = np.arange(new_bin_size, new_bin_size*selected_spikes.shape[1]+new_bin_size, new_bin_size)
         for n in range(num_remaining_crit_bands):

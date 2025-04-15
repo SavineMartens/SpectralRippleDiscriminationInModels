@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 import os 
 import yaml
 from pymatreader import read_mat
+import glob
+import matplotlib.transforms as mtransforms # labeling axes
 
 # to do
 # [X] y-scale allocated according to FFT -- Frijns says do Greenwood
@@ -40,15 +42,25 @@ def ax_colour_map_SMRT_per_kHz(ax, spike_rates_list, Fn_sel, sound_duration, y_a
 
 
 
-def load_mat_structs_Hamacher(fname, unfiltered_type = 'Hamacher'):
+def load_mat_structs_Hamacher(fname, unfiltered_type = 'Bruce'):
     matfile = read_mat(fname)['structPSTH']
-    spike_rate_unfiltered = matfile['unfiltered_neurogram']
+    fiber_frequencies = matfile['CF']
+    t_unfiltered = matfile['t_unfiltered']
+    
+    try:
+        spike_rate_unfiltered = matfile['unfiltered_neurogram']
+    except:
+        spike_rate_unfiltered = np.zeros((len(fiber_frequencies), len(t_unfiltered)))
+        unfiltered_row_indices = matfile['unfiltered_row_indices'].astype(int)
+        unfiltered_column_indices = matfile['unfiltered_column_indices'].astype(int)
+        unfiltered_values = matfile['unfiltered_values']
+        # fill in matrix
+        for row, column, value in zip(unfiltered_row_indices, unfiltered_column_indices, unfiltered_values):
+            spike_rate_unfiltered[row-1, column-1] = value
     sound_name = matfile['fname']
     if sound_name == None:
         sound_name = fname[fname.find('smrt'):fname.find('phase_0')+len('phase_0')]
     dBlevel = matfile['stimdb']
-    fiber_frequencies = matfile['CF']
-    t_unfiltered = matfile['t_unfiltered']
     try:
         Fs_down = matfile['down_sampling_rate']
     except:
@@ -87,13 +99,13 @@ def select_RPO_from_string(fname):
 if __name__ == '__main__':  
     bin_size = 0.005
     sound_duration = 0.5
-    flim=8 # None
+    flim= 8 # None
 
-    electric = False
-    electric_scale = 'log_fft' # 'log_fft', 'lin_fft', 'greenwood' 
-    normal = True
+    electric = True
+    electric_scale = 'log_min_fft' # 'log_fft', 'lin_fft', 'greenwood' 
+    normal = False
     data_dir = os.path.join(os.path.dirname(__file__), "data/SMRT/")
-
+    labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
     cbar_bool = False
 
     ###########################################################################################################
@@ -101,23 +113,35 @@ if __name__ == '__main__':
     if electric:
         print('Electric hearing:') 
         # output_data_dir =  './output/EH_SMRT/' 
-        fig, ax = plt.subplots(1,2, figsize= (10,4))
-        plt.subplots_adjust(left=0.07, right=0.98, bottom=0.144 , top=0.92) # 
-        axes = ax.flatten()
+
         norm = None
         
-        clim = (0, 1000)
+        clim = []# (0, 1500)
 
-        fname_list = ['2023-11-24_16h33m43.98s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_1', # or 1.5?
-                      '2023-11-24_16h40m12.69s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_3']
+        # fname_list = ['2023-11-24_16h33m43.98s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_1', # or 1.5?
+        #               '2023-11-24_16h40m12.69s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_3']
+        # fname_list = ['2025-03-25_09h53m37.29s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_1', # or 1.5?
+        #             #   '2025-03-25_12h19m13.66s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_2',
+        #               '2025-03-25_09h53m37.13s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_3']
+        # fname_list = ['2025-04-01_16h28m47.23s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_1',
+        #             #   '2025-04-01_16h28m40.58s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_2',
+        #               '2025-04-01_12h47m53.12s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_3']
+        fname_list = ['2025-04-14_15h46m8.97s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_1',
+                        '2025-04-14_15h46m38.13s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_2',
+                      '2025-04-14_15h46m38.13s spike_matrix_F120_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_3']
+        fig, ax = plt.subplots(1,len(fname_list), figsize= (5*int(len(fname_list)),4))
+        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig.dpi_scale_trans)
+        plt.subplots_adjust(left=0.07, right=0.98, bottom=0.144 , top=0.92) # 
+        axes = ax.flatten()
 
         for f_i, fname in enumerate(fname_list):
             print(fname)
             spike_rates_list = np.load(data_dir + fname + '.npy')
             time = fname[:fname.index('spike_matrix')-1]
             config_file = time + ' config_output.yaml'
+            config_file = glob.glob(data_dir + time + ' config_output*.yaml')[0]
             [num_fibers, num_bins] = spike_rates_list.shape 
-            with open(data_dir + config_file, "r") as yamlfile: #'./config_test.yaml'
+            with open(config_file, "r") as yamlfile: #'./config_test.yaml'
                 config = yaml.load(yamlfile, Loader=yaml.FullLoader)
             start_bin = config['binsize']
             binsize = config['binsize']
@@ -144,11 +168,17 @@ if __name__ == '__main__':
                 frequency_list = Fn[fiber_id_list]*1e-3
                 y_axis_str = 'Frequency [kHz]'
                 spike_matrix = spike_rates_list
+            elif electric_scale == 'log_min_fft':
+                frequency_list = np.load('./data/AB_MS_based_on_min_filtered_thresholdsfreq_x_fft.npy')*1e-3
+                fiber_id_list = np.load('./data/AB_MS_based_on_min_filtered_thresholdsfiber_ID_list_FFT.npy')
+                y_axis_str = 'Frequency [kHz]'
+                spike_matrix = spike_rates_list[fiber_id_list,:]
             RPO = fname[fname.index('width_')+len('width_'):]
             [mesh, axe] = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_matrix, frequency_list, sound_duration, y_axis_str, binsize=bin_size, clim=clim, norm=norm, flim=flim)
             axe.set_title(RPO + '.0 RPO', fontsize=font_size)
             axe.set_xlabel('Time [s]', fontsize=font_size)
-
+            axes[f_i].text(-0.015, 0.1, labels[f_i], transform=axes[f_i].transAxes + trans,
+                fontsize=18, verticalalignment='top', fontfamily='Open Sans', color='white')
 
             if 'p' in RPO:
                 RPO.replace('p', '.')
@@ -167,13 +197,13 @@ if __name__ == '__main__':
             cbar_str = 'Cbar'
         else:
             cbar_str = 'NoCbar'
-        fig.savefig(save_dir + 'EH_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' +str(bin_size) + '_norm_' + str(norm) + cbar_str +'_'+ electric_scale +'.png')
+        fig.savefig(save_dir + 'EH_cmap_' + cmap_type + '_clim_' + str(clim) + '_flim_' + str(flim) + '_binsize_' +str(bin_size) + '_norm_' + str(norm) + cbar_str +'_'+ electric_scale +'2416Fib111.6dB.png')
 
     ###########################################################################################################
     # Normal Hearing 
     if normal:
         print('Normal hearing:') 
-        num_fibers = 1903
+        num_fibers = 2416
         dB = 50
         # data_dir =  './data/SMRT/' 
         if dB == 65:
@@ -187,18 +217,25 @@ if __name__ == '__main__':
                             'PSTH_filter2024-04-02_18-26-57_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_2847CFs',
                             'PSTH_filter2024-04-02_16-34-06_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2847CFs',
                             'PSTH_filter2024-04-02_16-56-58_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2847CFs']
-            if num_fibers == 1903:
+            elif num_fibers == 1903:
                 fname_list = ['PSTH_filter2024-04-16_11-50-31_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_1903CFs',
                             'PSTH_filter2024-04-16_11-52-24_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_1903CFs',
                             'PSTH_filter2024-04-16_11-52-40_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_1903CFs',
                             'PSTH_filter2024-04-16_11-52-45_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_1903CFs']
+            elif num_fibers == 2416:
+                fname_list = ['PSTH_filter2025-03-24_15-53-11_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_4_2416CFs',
+                              'PSTH_filter2025-03-24_15-53-59_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_2416CFs',
+                              'PSTH_filter2025-03-24_16-00-40_SMRT_stimuli_C_dens_33_rate_5_depth_20_width_16_2416CFs',
+                              'PSTH_filter2025-03-24_16-03-26_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_16_2416CFs']
 
-        clim=(2000, None)
+        # clim=(2000, None)
+        clim = []
         norm=None#matplotlib.colors.Normalize() #matplotlib.colors.PowerNorm(.75) #None
         sound_duration = 0.5
         # flim=None
         fig, ax = plt.subplots(2,2, figsize= (10,8))
         plt.subplots_adjust(left=0.059, bottom=0.063, right=0.98, top=0.92)
+        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig.dpi_scale_trans)
         # fig.set_size_inches((10, 8))
         axes = ax.flatten()
         # plt.tight_layout()
@@ -211,7 +248,8 @@ if __name__ == '__main__':
             spike_rates_list = rebin_spikes(spikes_unfiltered, binsize_unfiltered, bin_size)/bin_size
             [mesh, axe] = ax_colour_map_SMRT_per_kHz(axes[f_i], spike_rates_list, fiber_frequencies*1e-3, sound_duration, binsize=bin_size, clim=clim, norm=norm, flim=flim)
             RPO = fname[fname.index('width_')+len('width_'):fname.index('_' + str(num_fibers))]
-            
+            axes[f_i].text(-0.015, 0.1, labels[f_i], transform=axes[f_i].transAxes + trans,
+                fontsize=16, verticalalignment='top', fontfamily='Open Sans', color='white')
 
             if f_i < 2:
                 carrier = fname[fname.index('dens_')+len('dens_'):fname.index('_rate')]

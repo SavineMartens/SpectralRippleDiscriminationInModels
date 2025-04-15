@@ -15,10 +15,16 @@ from scipy.io import wavfile
 # from abt import wav_to_electrodogram
 from matplotlib.patches import Rectangle
 from utilities import butter_lowpass_filter, transform_pulse_train_to_121_virtual
+import librosa
 
 
 def get_acoustic_spectrum(sound_name, use_preemp):
-    Fs_wav, audio_signal = wavfile.read(sound_name) # Fs = 44100
+    # Fs_wav, audio_signal = wavfile.read(sound_name) # Fs = 44100
+    if sound_name[-3:] == 'wav':
+        # breakpoint()
+        Fs_wav, audio_signal = wavfile.read(sound_name) # Fs = 44100
+    elif sound_name[-3:] == 'mp3':
+        audio_signal, Fs_wav = librosa.load(sound_name, sr=None)
     audio_signal = np.expand_dims(audio_signal, axis=0)
 
     if use_preemp:
@@ -87,52 +93,84 @@ def plot_acoustic_electric_fig(name_list, use_preemp):
         previous1 = 0
         previous2 = 0   
 
-        sound_name = sound_dir + name + '.wav'
+        if name[-3:] == 'mp3':
+            sound_name = sound_dir + name
+            if  name[8] == 'd':
+                color = color_s
+            elif name[8] == 'u':    
+                color = color_i
+            if i_n !=0 and i_n%2 == 0:
+                iterator += 1
+            if iterator == int(len(name_list)/2)-1:
+                if  name[8] == 'd':
+                    label = 'down'
+                elif name[8] == 'u':
+                    label = 'up'  
+            else:
+                 label = ''                        
+        else:
+            sound_name = sound_dir + name + '.wav'
+            if 'width_20' in name:
+                color = color_i
+            elif 'width_' in name:
+                color = color_s
+            elif  name[0] == 's':
+                color = color_s
+            elif name[0] == 'i':
+                color = color_i
+            if i_n !=0 and i_n%2 == 0:
+                iterator += 1
+            if iterator == 3:
+                if  name[0] == 's':
+                    label = 'standard'
+                elif name[0] == 'i':
+                    label = 'inverted'
+            else:
+                label = ''
         outline, frequency, pre_str = get_acoustic_spectrum(sound_name, use_preemp)
         normalized_bins = get_electric_spectrum(sound_name) 
         
-        if  name[0] == 's':
-            color = color_s
-        elif name[0] == 'i':
-            color = color_i
-        if i_n !=0 and i_n%2 == 0:
-            iterator += 1
-        if iterator == 3:
-            if  name[0] == 's':
-                label = 'standard'
-            elif name[0] == 'i':
-                label = 'inverted'
-        else:
-            label = ''
+
         ax1[0,iterator].plot(frequency, np.squeeze(outline), color = color, label=label)
         ax1[0,iterator].set_xscale('log', base=2)
         ax1[0,iterator].set_xlim((200, 8700))
         ax1[0,iterator].set_ylim((0, 1))
         ax1[0,iterator].set_xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
-        edges = [340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
+        edges = [306, 442, 578, 646, 782, 918, 1054, 1250, 1529, 1801, 2141, 2549, 3025, 3568, 4248, 8054] #[340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
         x=3 # check edges
         for edge in edges:
+            print(edge)
             ax1[0,iterator].vlines(edge, 0, 1, color='lightgray')
-        RPO_re = re.search('_(.*)_', name)
-        RPO = RPO_re.group(1)
-        while RPO[-2:] == '00':
-            RPO = RPO[:-2]
-        ax1[0,iterator].set_title(RPO + ' RPO', fontsize=fontsize )
+
+        if name[-3:] == 'mp3': # STRIPES
+            RPO = re.search('_(.*)_', name).group(1)
+            ax1[0,iterator].set_title('Glide: ' + RPO[2:], fontsize=fontsize )
+        elif 'width_' in name: # SMRT
+            width = re.search('width_(.*)', name).group(1)
+            if width != '20':
+                ax1[0,iterator].set_title('RPO: ' + width, fontsize=fontsize )
+        else: # Spectral ripple
+            RPO_re = re.search('_(.*)_', name)
+            RPO = RPO_re.group(1)
+            while RPO[-2:] == '00':
+                RPO = RPO[:-2]
+            ax1[0,iterator].set_title(RPO + ' RPO', fontsize=fontsize )
+            width = '20'
         if iterator == 3:
             ax1[0,iterator].legend(loc='upper right', fontsize=fontsize)
 
         for i, bin in enumerate(normalized_bins): 
-            if  name[0] == 's':
-                if iterator == 3 and i == 1:
-                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_s, linewidth= 3, label='standard') # 
+            if  name[:2] == 's_' or name[8] == 'd' or width != '20':
+                if iterator == int(len(name_list)/2)-1 and i == 1:
+                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_s, linewidth= 3, label=label) # 
                 else:
                     ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_s, linewidth= 3, label='') # 
                 ax1[1, iterator].vlines(edges[i], previous1, bin, colors=color_s, linewidth= 3, label='_nolegend_') # 
 
                 previous1 = bin 
-            elif  name[0] == 'i':
-                if iterator == 3 and i == 1:
-                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_i, linewidth= 3, label='inverted') # 
+            elif  name[0] == 'i'or name[8] == 'u' or 'width_20' in name: # 
+                if iterator == int(len(name_list)/2)-1 and i == 1:
+                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_i, linewidth= 3, label=label) # 
                 else:
                     ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_i, linewidth= 3, label='') 
                 ax1[1, iterator].vlines(edges[i], previous2, bin, colors=color_i, linewidth= 3, label='') # 
@@ -177,7 +215,7 @@ def plot_acoustic_electric_fig(name_list, use_preemp):
 def plot_acoustic_electric_virtual_fig(name_list, use_preemp):
     fig2 , ax2 = plt.subplots(3, 1)
     fig2.set_size_inches(16,6)
-    edges = [340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
+    edges = [306, 442, 578, 646, 782, 918, 1054, 1250, 1529, 1801, 2141, 2549, 3025, 3568, 4248, 8054]    #[340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
     # plt.subplots_adjust(left=0.038, right=0.99, wspace=0.112, top=0.9)
     for i_n, name in enumerate(name_list):
         previous1 = 0
@@ -297,29 +335,64 @@ def plot_acoustic_electric_virtual_fig(name_list, use_preemp):
     return fig2, pre_str
 
 
+if __name__ == '__main__':  
+    color_s = 'blue'
+    color_i = 'red'
+    fontsize = 14.5 
+    test_type = 'SR' # 'SR' / 'STRIPES' / 'SMRT'
 
-data_dir = './data/spectrum' 
-sound_dir = './sounds/spectral ripple/'
+    if test_type == 'SR':
+        data_dir = './data/spectrum' 
+        sound_dir = './sounds/spectral ripple/'
 
-color_s = 'blue'
-color_i = 'red'
-use_preemp = True
-fontsize = 14.5
+        # color_s = 'blue'
+        # color_i = 'red'
+        use_preemp = True
+        # fontsize = 14.5
 
-plot_electric = False
-plot_virtual = True
+        plot_electric = True
+        plot_virtual = False
 
-if plot_electric:
-    get_virtual_bins = False
-    name_list = ['s_0.500_1', 'i1_0.500_1', 's_1.414_1', 'i1_1.414_1', 's_2.000_1', 'i1_2.000_1', 's_4.000_1', 'i1_4.000_1']
-    fig1, pre_str = plot_acoustic_electric_fig(name_list, use_preemp)
-    fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipples'+color_i + color_s + pre_str +'.png')
+        if plot_electric:
+            get_virtual_bins = False
+            name_list = ['s_0.500_1', 'i1_0.500_1', 's_1.414_1', 'i1_1.414_1', 's_2.000_1', 'i1_2.000_1', 's_4.000_1', 'i1_4.000_1']
+            fig1, pre_str = plot_acoustic_electric_fig(name_list, use_preemp)
+            fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipples'+color_i + color_s + pre_str +'306_8054Hz.png')
 
-if plot_virtual:
-    name_list = ['s_2.828_1', 'i1_2.828_1'] 
-    fig2, pre_str = plot_acoustic_electric_virtual_fig(name_list, use_preemp)
-    fig2.savefig('./figures/spectrum/AcousticElectricVirtualSpectralRipples'+color_i + color_s + pre_str +'.png')
+        if plot_virtual:
+            name_list = ['s_2.828_1', 'i1_2.828_1'] 
+            fig2, pre_str = plot_acoustic_electric_virtual_fig(name_list, use_preemp)
+            fig2.savefig('./figures/spectrum/AcousticElectricVirtualSpectralRipples'+color_i + color_s + pre_str +'.png')
 
-plt.show()
+
+    if test_type == 'STRIPES':
+        data_dir = './data/STRIPES/'
+        sound_dir = './sounds/STRIPES/'
+        use_preemp = True
+        ripple_list = [3.0, 5.0, 7.0, 9.0]#np.arange(5.5, 10.5, 0.5)
+        fname_list = []
+
+        for ripple_ud in ripple_list:
+            if ripple_ud == 1.0:
+                ripple_ud = 1.1 
+            fname_list.append('stripes_u_'+ str(ripple_ud) + '_0.mp3')
+            fname_list.append('stripes_d_'+ str(ripple_ud) + '_0.mp3')
+            
+        fig1, pre_str = plot_acoustic_electric_fig(fname_list, use_preemp)
+        fig1.savefig('./figures/STRIPES/Acoustic_Electric_'+ str(ripple_list) + '.png')
+
+    if test_type == 'SMRT':
+        data_dir = './data/SMRT/'
+        sound_dir = './sounds/SMRT/'
+        use_preemp = True
+        RPO_list = ['_1', '_2', '_3']
+        fname_list = []
+        for RPO in RPO_list:
+            fname_list.append('SMRT_stimuli_C_dens_100_rate_5_depth_20_width' + RPO)
+            fname_list.append('SMRT_stimuli_C_dens_100_rate_5_depth_20_width_20')
+        fig1, pre_str = plot_acoustic_electric_fig(fname_list, use_preemp)
+        fig1.savefig('./figures/SMRT/Acoustic_Electric_'+ str(RPO_list) + '.png')
+
+    plt.show()
 
 

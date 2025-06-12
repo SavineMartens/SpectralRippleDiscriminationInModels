@@ -50,17 +50,17 @@ for e in range(len(edges)-1):
     freq_x_fft.extend(freq_fft_band)
 
 
-fiber_id_start = int(fiber_id_electrode[0] + half_electrode_range)
-fiber_id_end = int(fiber_id_electrode[-1])
-fiber_list = range(fiber_id_start, fiber_id_end, -1)
-frequency_list = np.load('./data/EH_freq_vector_electrode_allocation_logspaced.npy')
-plt.scatter(Ln[fiber_list], freq_x_fft, s=1)
-plt.scatter(Ln[fiber_list], frequency_list, s=1, color='r')
-plt.vlines(Le, 300, 8000)
-plt.hlines(edges, Ln[fiber_id_end], Ln[fiber_id_start])
-plt.xlabel('Position fiber & electrode [mm]')
-plt.ylabel('Learnt frequency [Hz]')
-plt.title('Log-scale allocated frequency')
+# fiber_id_start = int(fiber_id_electrode[0] + half_electrode_range)
+# fiber_id_end = int(fiber_id_electrode[-1])
+# fiber_list = range(fiber_id_start, fiber_id_end, -1)
+# frequency_list = np.load('./data/EH_freq_vector_electrode_allocation_logspaced.npy')
+# plt.scatter(Ln[fiber_list], freq_x_fft, s=1)
+# plt.scatter(Ln[fiber_list], frequency_list, s=1, color='r')
+# plt.vlines(Le, 300, 8000)
+# plt.hlines(edges, Ln[fiber_id_end], Ln[fiber_id_start])
+# plt.xlabel('Position fiber & electrode [mm]')
+# plt.ylabel('Learnt frequency [Hz]')
+# plt.title('Log-scale allocated frequency')
 
 def get_normalized_spectrum(fname, filter_bool=True, filter_order = 4, cut_off_freq = 100):
     if '.mat' in fname:

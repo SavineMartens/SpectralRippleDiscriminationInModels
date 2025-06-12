@@ -69,10 +69,36 @@ def load_matrices_from_vectors_Bruce_struct(fname):
     t_filtered_downsampled = t_unfiltered[::Fs_ratio]
     return spike_rate_unfiltered, spike_rate_filtered_downsampled, sound_name, dBlevel, fiber_frequencies, Hamacher_Fs, t_unfiltered, t_filtered_downsampled
 
+def load_matrices_from_vectors_Bruce_multi_trial(fname):
+    matfile = read_mat(fname)['structPSTH']
+    sound_name = matfile['fname']
+    dBlevel = matfile['stimdb']
+    fiber_frequencies = matfile['CF']
+    t_unfiltered = matfile['t_unfiltered']
+    spike_rate_unfiltered = np.zeros((len(fiber_frequencies), len(t_unfiltered)))
+    trial_row_indices = matfile['trial_row_indices'].astype(int)
+    trial_column_indices = matfile['trial_column_indices'].astype(int)
+    trial_values = matfile['trial_spikes']
+    trial_count = matfile['trial_count']
+    trial_idx = np.insert(np.cumsum(np.asarray(trial_count)), 0, 1 )# cumulative sum of trial counts to get the indices
+    num_trials = int(matfile['nrep'])
+    trials_neurogram = np.zeros((num_trials, len(fiber_frequencies), len(t_unfiltered)))
+    # fill in matrix
+    for trial in range(num_trials):
+        row_indices = trial_row_indices[int(trial_idx[trial])-1:int(trial_idx[trial+1])]
+        column_indices = trial_column_indices[int(trial_idx[trial])-1:int(trial_idx[trial+1])]
+        values = trial_values[int(trial_idx[trial])-1:int(trial_idx[trial+1])]
+        print(len(row_indices))
+        for row, column, value in zip(row_indices, column_indices, values):
+            trials_neurogram[trial, row-1, column-1] = int(value)
+    summed_neurogram = np.sum(spike_rate_unfiltered, axis=0) # sum over trials
+    return summed_neurogram, trials_neurogram, sound_name, dBlevel, fiber_frequencies, t_unfiltered
+
 
 def find_closest_index(array, value):
     idx = (np.abs(array - value)).argmin()
     return idx
+
 
 def butter_lowpass_filter(data, cutoff, fs, order):
     nyq = fs/2

@@ -29,7 +29,7 @@ for e, mm in enumerate(Le):
 
 data_dir = './data/SMRT/'
 
-RPO_list = np.arange(1, 6)
+RPO_list = np.arange(1, 3)
 
 for r_i, RPO in enumerate(RPO_list):
     fig, ax = plt.subplots(3, 5, sharex=True, figsize=(16, 15))   
@@ -47,5 +47,5 @@ for r_i, RPO in enumerate(RPO_list):
         # plt.figure()
         axes[band].plot(band_vector)
         axes[band].set_title('FFT band: ' + str(band) + ' (' + str(edges[band]) + '-'  + str(edges[band+1]) + 'Hz)' )
-    plt.savefig('./figures/SMRT/Temporal_depiction_per_FFT_band_RPO' + str(RPO) + '.png')
+    # plt.savefig('./figures/SMRT/Temporal_depiction_per_FFT_band_RPO' + str(RPO) + '.png')
 plt.show()

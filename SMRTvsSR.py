@@ -383,17 +383,19 @@ def double_normalized_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spac
     return fig
 
 
-def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced):
+def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, filter_type='butter', octave_spaced=True):
     if num_CFs == 1903:
-        id_peak_smrt = 1851
-        id_peak_sr_s = 1801
-        id_peak_sr_i = 1784
-        id_peak_smrt_R = 1852
+        # id_peak_smrt = 1851
+        # id_peak_sr_s = 1801
+        # id_peak_sr_i = 1784
+        # id_peak_smrt_R = 1852
+        id_peak_start = 1700
     elif num_CFs == 2416:
-        id_peak_smrt_R = 2287
-        id_peak_smrt = 2281
-        id_peak_sr_s = 2147
-        id_peak_sr_i = 2099
+        # id_peak_smrt_R = 2287
+        # id_peak_smrt = 2281
+        # id_peak_sr_s = 2147
+        # id_peak_sr_i = 2099
+        id_peak_start = 2000
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 4), sharex=True, sharey=True)
     plt.subplots_adjust(left=0.079, bottom=0.11, right=0.967, top=0.929, wspace=0.105)
@@ -411,30 +413,45 @@ def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced):
     normal_spectrum_SR_i, fiber_frequencies = get_spectrum(fname_NH_SR_i)    
 
     # get single fiber (50 total) spike rate, duration sound is =.5
-    normal_spectrum_SR_s = normal_spectrum_SR_s/0.5/50
-    normal_spectrum_SR_i = normal_spectrum_SR_i/0.5/50
+    if NH_dB == 50: # nrep = 1
+        normal_spectrum_SR_s = normal_spectrum_SR_s/0.5/50
+        normal_spectrum_SR_i = normal_spectrum_SR_i/0.5/50
+        y_plus = 0
+    if NH_dB == 65: # nrep = 5
+        normal_spectrum_SR_s = normal_spectrum_SR_s/0.5/50/5
+        normal_spectrum_SR_i = normal_spectrum_SR_i/0.5/50/5
+        # id_peak_sr_s = np.argmax(normal_spectrum_SR_s[1000:])+1000
+        # id_peak_sr_i = np.argmax(normal_spectrum_SR_i[2000:])+2000
+        y_plus = 20
 
     #Spectral ripple standard
     ax = plt.subplot(1, 2, 1)
     ax.text(-0.01, 0.1, 'A', transform=ax.transAxes + trans,
         fontsize=18, verticalalignment='top', color='white')
     plt.bar(fiber_frequencies, normal_spectrum_SR_s, width=bar_width, alpha=alpha, color='blue')
-    filter_sig_sr_s = butter_lowpass_filter(normal_spectrum_SR_s, cut_off_freq, len(normal_spectrum_SR_s), filter_order)
+    if filter_type == 'butter':
+        filter_sig_sr_s = butter_lowpass_filter(normal_spectrum_SR_s, cut_off_freq, len(normal_spectrum_SR_s), filter_order)
+        filter_sig_sr_i = butter_lowpass_filter(normal_spectrum_SR_i, cut_off_freq, len(normal_spectrum_SR_i), filter_order)
+    if filter_type == 'mavg':
+        filter_sig_sr_s = symmetric_moving_average(normal_spectrum_SR_s, window_size=window_size)
+        filter_sig_sr_i = symmetric_moving_average(normal_spectrum_SR_i, window_size=window_size)
     plt.plot(fiber_frequencies, filter_sig_sr_s, color='blue', label='filtered response (standard)')
+    plt.bar(fiber_frequencies, normal_spectrum_SR_i, width=bar_width, alpha=alpha, color='magenta')
+    plt.plot(fiber_frequencies, filter_sig_sr_i, color='magenta', label='filtered response (inverted)')
     # plt.xlim(min(fiber_frequencies), 8e3)
-    plt.xlim(4e3, max(fiber_frequencies))
+    plt.xlim(4e3, fiber_frequencies[-1])
     plt.vlines(5000, 0, 3000, colors='red', label='frequency limit')
     plt.hlines(1100/0.5/50, 4e3, 8100, colors='red', linestyles='dashed', label='Spontaneous rate')
-    plt.ylim((0,3000/0.5/50))
+    plt.ylim((0,3000/0.5/50+y_plus))
     plt.ylabel('Spiking rate [sp/s]')
     plt.title('Spectral ripple: inverted versus standard (4.0 RPO)')
     plt.xlabel('Frequency [Hz]')
-    # Spectral ripple inverted
-    plt.bar(fiber_frequencies, normal_spectrum_SR_i, width=bar_width, alpha=alpha, color='magenta')
-    filter_sig_sr_i = butter_lowpass_filter(normal_spectrum_SR_i, cut_off_freq, len(normal_spectrum_SR_i), filter_order)
-    plt.plot(fiber_frequencies, filter_sig_sr_i, color='magenta', label='filtered response (inverted)')
+
     dB=3
     print(dB, 'dB point')
+    id_peak_sr_s = np.argmax(filter_sig_sr_s[id_peak_start:])+id_peak_start
+    id_peak_sr_i = np.argmax(filter_sig_sr_i[id_peak_start:])+id_peak_start
+
     _, id_5000 = find_nearest(fiber_frequencies, 5000)
     # 3 dB point:
     y_val_SR_s = normal_spectrum_SR_s[id_peak_sr_s]/(10**(dB/10))
@@ -459,7 +476,6 @@ def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced):
     f_5000_SR_s_dB = fiber_frequencies[idx_5000_SR_s_dB] # x dB point versus 5000 Hz
     f_5000_SR_i_dB = fiber_frequencies[idx_5000_SR_i_dB] # x dB point versus 5000 Hz
 
-    # SOMETHING IS OFF why is f_5000_SR_i_dB = 8028
 
     peak_marker = '*'
     peak_marker_size = 100
@@ -483,9 +499,11 @@ def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced):
             dB_str = '2023-11-24'
     if num_CFs == 2416:
         dB_str = ''
+        if NH_dB == 50:
+            dB_str = ''
         time_str = '*2025'
         
-    fname_NH_SMRT_RT = glob.glob(SMRT_data_dir + time_str +'*' + dB_str + '*100*width_*' + RPO[0] + '*.mat')[0]
+    fname_NH_SMRT_RT = glob.glob(SMRT_data_dir + time_str +'*' + dB_str + '*100*width_' + RPO[0] + '*.mat')[0]
     fname_NH_SMRT_R = glob.glob(SMRT_data_dir + time_str + '*100*width_20*'+ str(num_CFs) + 'CFs.mat')[0]
     # fname_NH_SMRT_RT1 = glob.glob(SMRT_data_dir + time_str + '*100*width_1_*' + str(num_CFs) +'CFs.mat')[0]
     print('SMRT RT:', fname_NH_SMRT_RT)
@@ -494,8 +512,14 @@ def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced):
     # normal_spectrum_SMRT_RT1, _ =  get_normalized_spectrum(fname_NH_SMRT_RT1)       
     normal_spectrum_SMRT_R, _ =  get_spectrum(fname_NH_SMRT_R)
 
-    normal_spectrum_SMRT_RT = normal_spectrum_SMRT_RT/0.5/50
-    normal_spectrum_SMRT_R = normal_spectrum_SMRT_R/0.5/50
+    if NH_dB == 50: # nrep = 1
+        normal_spectrum_SMRT_RT = normal_spectrum_SMRT_RT/0.5/50
+        normal_spectrum_SMRT_R = normal_spectrum_SMRT_R/0.5/50
+    if NH_dB == 65: # nrep = 5
+        normal_spectrum_SMRT_RT = normal_spectrum_SMRT_RT/0.5/50/5
+        normal_spectrum_SMRT_R = normal_spectrum_SMRT_R/0.5/50/5
+        id_peak_smrt_R = np.argmax(normal_spectrum_SMRT_R)
+        id_peak_smrt = np.argmax(normal_spectrum_SMRT_RT)
 
     ax = plt.subplot(1, 2, 2)
     ax.text(-0.01, 0.1, 'B', transform=ax.transAxes + trans,
@@ -503,16 +527,26 @@ def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced):
     plt.bar(fiber_frequencies, normal_spectrum_SMRT_RT, width=bar_width, alpha=alpha, color='blue')
     # plt.bar(fiber_frequencies, normal_spectrum_SMRT_RT1, width=bar_width, alpha=alpha, color='blue')
     plt.bar(fiber_frequencies, normal_spectrum_SMRT_R, width=bar_width, alpha=alpha, color='magenta')
-    filter_sig_smrt_RT = butter_lowpass_filter(normal_spectrum_SMRT_RT, cut_off_freq, len(normal_spectrum_SMRT_RT), filter_order)
-    # filter_sig_smrt_RT1 = butter_lowpass_filter(normal_spectrum_SMRT_RT1, cut_off_freq, len(normal_spectrum_SMRT_RT1), filter_order)
-    filter_sig_smrt_R = butter_lowpass_filter(normal_spectrum_SMRT_R, cut_off_freq, len(normal_spectrum_SMRT_R), filter_order)
+    if filter_type == 'butter':
+        filter_sig_smrt_RT = butter_lowpass_filter(normal_spectrum_SMRT_RT, cut_off_freq, len(normal_spectrum_SMRT_RT), filter_order)
+        filter_sig_smrt_R = butter_lowpass_filter(normal_spectrum_SMRT_R, cut_off_freq, len(normal_spectrum_SMRT_R), filter_order)
+        # filter_sig_smrt_RT1 = butter_lowpass_filter(normal_spectrum_SMRT_RT1, cut_off_freq, len(normal_spectrum_SMRT_RT1), filter_order)
+    if filter_type == 'mavg':
+        filter_sig_smrt_RT = symmetric_moving_average(normal_spectrum_SMRT_RT, window_size=window_size)
+        filter_sig_smrt_R = symmetric_moving_average(normal_spectrum_SMRT_R, window_size=window_size)
+        # filter_sig_smrt_RT1 = symmetric_moving_average(normal_spectrum_SMRT_RT1, window_size=window_size)
     plt.plot(fiber_frequencies, filter_sig_smrt_RT, color='blue', label='filtered response (4.0 RPO)')
     # plt.plot(fiber_frequencies, filter_sig_smrt_RT1, color='green', label='filtered response (1.0 RPO)')
     plt.plot(fiber_frequencies, filter_sig_smrt_R, color='magenta', label='filtered response (20.0 RPO)')
     plt.vlines(6500, 0, 3000, colors='red', label='frequency limit')
     plt.hlines(1100/0.5/50, 4e3, 8100, colors='red',linestyles='dashed', label='Spontaneous rate')
     plt.title('SMRT: 4.0 RPO versus 20.0 RPO')
+    plt.xlim()
     plt.xlabel('Frequency [Hz]')
+
+    id_peak_smrt = np.argmax(filter_sig_smrt_RT[id_peak_start:])+id_peak_start
+    id_peak_smrt_R = np.argmax(filter_sig_smrt_R[id_peak_start:])+id_peak_start
+
     y_val_SMRT_RT = normal_spectrum_SMRT_RT[id_peak_smrt]/(10**(dB/10))
     y_val_6500_RT = normal_spectrum_SMRT_RT[id_6500]/(10**(dB/10)) 
 
@@ -547,15 +581,16 @@ def double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced):
     plt.legend(loc='center left')
     
     # Above frequency content
-    # upper_4, upperfreq = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-23-27_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_1000CFs.mat')
-    # upper_20, _ = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-24-26_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_20_1000CFs.mat')
-    # upper_s, _ = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-27-03_s_4.000_1_1000CFs.mat')
-    # upper_i, _ = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-32-35_i1_4.000_1_1000CFs.mat')
-    # # all approximately 1080 spikes
-    # np.mean(upper_4[678:])
-    # np.mean(upper_20[678:])
-    # np.mean(upper_s[678:])
-    # np.mean(upper_i[678:])
+    if NH_dB == 50:
+        upper_4, upperfreq = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-23-27_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_4_1000CFs.mat')
+        upper_20, _ = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-24-26_SMRT_stimuli_C_dens_100_rate_5_depth_20_width_20_1000CFs.mat')
+        upper_s, _ = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-27-03_s_4.000_1_1000CFs.mat')
+        upper_i, _ = get_spectrum(SMRT_data_dir + '/PSTH_filter2025-04-11_12-32-35_i1_4.000_1_1000CFs.mat')
+        # all approximately 1080 spikes
+        np.mean(upper_4[678:])
+        np.mean(upper_20[678:])
+        np.mean(upper_s[678:])
+        np.mean(upper_i[678:])
 
     # print('SRs: C vs B', octave_from_frequency(f_SR_s_dB, 5000)) # frequency x dB from peak vs 5000 Hz
     # print('SRi: C vs B', octave_from_frequency(f_SR_i_dB, 5000)) # frequency x dB from peak vs 5000 Hz
@@ -715,13 +750,20 @@ if __name__ == "__main__":
     SR_both_vs_SMRT_normalized = False
     SMRT_data_dir = './data/SMRT/'
 
+    filter_type = 'mavg'  # 'butter' or 'mavg'
     filter_order = 4
     cut_off_freq = 100
+    window_size = 33  # for moving average filter
     RPO = '4.0'
-    NH_dB = 50
+    NH_dB = 65
 
     # sr_data_dir = './data/spectrum/'+str(NH_dB) +'dB_1903F/'
     sr_data_dir = './data/spectrum/'+str(NH_dB) + 'dB_2416CF/'
+    if NH_dB == 50:
+        SMRT_data_dir = SMRT_data_dir  + '/50dB_2416CF_nrep1/'
+    if NH_dB == 65:
+        SMRT_data_dir = SMRT_data_dir  + '/65dB_2416CF_nrep5/'
+
     octave_spaced = True
     if octave_spaced:
         octave_str = 'octave_spaced_'
@@ -740,8 +782,8 @@ if __name__ == "__main__":
         fig = double_normalized_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced)
 
     if SR_both_vs_SMRT:
-        fig = double_spectrum_standard_inverted_one_fig(RPO, NH_dB, octave_spaced)
-        fig.savefig('./figures/SRiSRsvsSMRT_filteredSpikeRate' + '_'.join(RPO) + 'RPO_' + octave_str + str(NH_dB) +'dB'+str(num_CFs)+'Fib.png')
+        fig = double_spectrum_standard_inverted_one_fig(RPO, NH_dB, filter_type=filter_type, octave_spaced=octave_spaced)
+        fig.savefig('./figures/SRiSRsvsSMRT_filteredSpikeRate' + '_'.join(RPO) + 'RPO_' + octave_str + str(NH_dB) +'dB_'+filter_type + '_' + str(num_CFs)+'Fib.png')
 
     if SR_vs_SMRT:
         # neural activation

@@ -8,7 +8,7 @@ from SMRTvsSR import get_FFT_spectrum
 # [ ] ACE
 
 EH_data_dir = './data/STRIPES/'
-NH_data_dir = './data/STRIPES/NH_normal_spont/'
+NH_data_dir =  './data/STRIPES/BookendsDifference/' #'./data/STRIPES/NH_normal_spont/' # 
 sound_dir = './sounds/STRIPES/'
 
 # can't do at the same time
@@ -18,7 +18,7 @@ plot_critical_bands = True
 plot_edges = False
 plot_ACE = False
 
-ripple_list = np.arange(5.5, 10.5, 0.5) # [3.0, 5.0, 7.0, 9.0]
+ripple_list = np.arange(1,4)#np.arange(5.5, 10.5, 0.5) # [3.0, 5.0, 7.0, 9.0]
 font_size = 20
 
 # plotting characteristics
@@ -69,14 +69,24 @@ for ripple_ud in ripple_list:
     fname_u = glob.glob(sound_dir + '*u*' + str(ripple_ud) + '*')[0]
     fname_d = glob.glob(sound_dir + '*d*' + str(ripple_ud) + '*')[0]
     # get NH
-    fname_NH_u = glob.glob(NH_data_dir + '*u*' + str(ripple_ud) + '*.mat')[0]
-    fname_NH_d = glob.glob(NH_data_dir + '*d_*' + str(ripple_ud) + '*.mat')[0]
+    if NH_data_dir == './data/STRIPES/BookendsDifference/':
+        num_fibers = 1903
+        # w/o noise
+        # fname_NH_u =  glob.glob(NH_data_dir + '*BS_d*' + str(int(ripple_ud)) + '_*0.01_u*noise*.mat')[0]
+        # fname_NH_d =  glob.glob(NH_data_dir + '*BS_d*' + str(int(ripple_ud)) + '_*0.01_d*noise*.mat')[0]
+        # w/ noise
+        fname_NH_u =  glob.glob(NH_data_dir + '*BS_d*' + str(int(ripple_ud)) + '_*0.01_u_'+ str(num_fibers) +'*.mat')[0]
+        fname_NH_d =  glob.glob(NH_data_dir + '*BS_d*' + str(int(ripple_ud)) + '_*0.01_d_'+ str(num_fibers) +'*.mat')[0]
+    else:
+        fname_NH_u = glob.glob(NH_data_dir + '*u*' + str(ripple_ud) + '*.mat')[0]
+        fname_NH_d = glob.glob(NH_data_dir + '*d_*' + str(ripple_ud) + '*.mat')[0]
     # get EH
     fname_EH_u = glob.glob(EH_data_dir + '*matrix*u*' + str(ripple_ud) + '*.npy')[0]
     fname_EH_d = glob.glob(EH_data_dir + '*matrix*d_*' + str(ripple_ud) + '*.npy')[0]
 
     # plotting critical bands
     if plot_critical_bands:
+        print(fname_NH_d, fname_NH_u, fname_EH_d, fname_EH_u)
         # NH
         fig = plot_fig_critical_bands([fname_NH_d, fname_NH_u], critical_band_type, bin_size)
         plt.suptitle('NH with '+  str(ripple_ud) + ' density on '+ critical_band_type + ' scale', fontsize=20)

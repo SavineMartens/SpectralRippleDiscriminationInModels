@@ -84,7 +84,7 @@ def get_electric_spectrum(sound_name, get_virtual_bins=False):
     return normalized_bins
 
 
-def plot_acoustic_electric_fig(name_list, use_preemp):
+def plot_acoustic_electric_fig(name_list, use_preemp, phase='1'):
     fig1 , ax1 = plt.subplots(2, int(len(name_list)/2))
     fig1.set_size_inches(17,5)
     plt.subplots_adjust(left=0.038, right=0.99, wspace=0.112, top=0.9)
@@ -109,7 +109,7 @@ def plot_acoustic_electric_fig(name_list, use_preemp):
             else:
                  label = ''                        
         else:
-            sound_name = sound_dir + name + '.wav'
+            sound_name = sound_dir + name+ phase + '.wav'
             if 'width_20' in name:
                 color = color_i
             elif 'width_' in name:
@@ -127,6 +127,7 @@ def plot_acoustic_electric_fig(name_list, use_preemp):
                     label = 'inverted'
             else:
                 label = ''
+        print(sound_name)
         outline, frequency, pre_str = get_acoustic_spectrum(sound_name, use_preemp)
         normalized_bins = get_electric_spectrum(sound_name) 
         
@@ -139,7 +140,7 @@ def plot_acoustic_electric_fig(name_list, use_preemp):
         edges = [306, 442, 578, 646, 782, 918, 1054, 1250, 1529, 1801, 2141, 2549, 3025, 3568, 4248, 8054] #[340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
         x=3 # check edges
         for edge in edges:
-            print(edge)
+            # print(edge)
             ax1[0,iterator].vlines(edge, 0, 1, color='lightgray')
 
         if name[-3:] == 'mp3': # STRIPES
@@ -343,7 +344,7 @@ if __name__ == '__main__':
 
     if test_type == 'SR':
         data_dir = './data/spectrum' 
-        sound_dir = './sounds/spectral ripple/'
+        sound_dir = 'C:\\Users\\ssmmartens\\OneDrive - LUMC\\Sounds\Ripple\\' #'./sounds/spectral ripple/'
 
         # color_s = 'blue'
         # color_i = 'red'
@@ -355,12 +356,14 @@ if __name__ == '__main__':
 
         if plot_electric:
             get_virtual_bins = False
-            name_list = ['s_0.500_1', 'i1_0.500_1', 's_1.414_1', 'i1_1.414_1', 's_2.000_1', 'i1_2.000_1', 's_4.000_1', 'i1_4.000_1']
-            fig1, pre_str = plot_acoustic_electric_fig(name_list, use_preemp)
-            fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipples'+color_i + color_s + pre_str +'306_8054Hz.png')
+            name_list = ['s_0.500_', 'i1_0.500_', 's_1.414_', 'i1_1.414_', 's_2.000_', 'i1_2.000_', 's_4.000_', 'i1_4.000_']
+            for phase in range(7, 30):
+                phase = str(phase) # '1' / '2' / '3'    
+                fig1, pre_str = plot_acoustic_electric_fig(name_list, use_preemp, phase)
+                fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipples'+color_i + color_s + pre_str +'306_8054Hz_phase'+ phase +'.png')
 
         if plot_virtual:
-            name_list = ['s_2.828_1', 'i1_2.828_1'] 
+            name_list = ['s_2.828_', 'i1_2.828_'] 
             fig2, pre_str = plot_acoustic_electric_virtual_fig(name_list, use_preemp)
             fig2.savefig('./figures/spectrum/AcousticElectricVirtualSpectralRipples'+color_i + color_s + pre_str +'.png')
 

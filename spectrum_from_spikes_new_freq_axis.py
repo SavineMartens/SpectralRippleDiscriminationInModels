@@ -127,7 +127,8 @@ def create_double_spectrum(normal_spectrum_i,
 def double_spectrum_one_fig(RPO_list,
                            vlines_nh=False,
                            vlines_eh=False,
-                           octave_spaced=False):
+                           octave_spaced=False,
+                           filter_type='butter'):
     fig, axes = plt.subplots(len(RPO_list), 2, figsize=(12, 9))
     plt.subplots_adjust(left=0.079, bottom=0.062, right=0.98, top=0.96, hspace=0.3)
     bar_width = 15
@@ -154,7 +155,10 @@ def double_spectrum_one_fig(RPO_list,
         fname_EH_s = [l for l in fname_EH_s_ if ('alpha' not in l)][0]
         electric_spectrum_i, electric_spectrum2_i = get_normalized_spectrum(fname_EH_i, filter_bool)
         electric_spectrum_s, electric_spectrum2_s = get_normalized_spectrum(fname_EH_s, filter_bool)
-        
+        if filter_type == 'mavg':
+            electric_spectrum2_i = symmetric_moving_average(electric_spectrum_i, window_size=window_size)
+            electric_spectrum2_s = symmetric_moving_average(electric_spectrum_s, window_size=window_size)
+
         electric_spectrum_i = electric_spectrum_i[fiber_id_selection[0]:fiber_id_selection[-1]+1]
         electric_spectrum_s = electric_spectrum_s[fiber_id_selection[0]:fiber_id_selection[-1]+1]
         electric_spectrum2_i = electric_spectrum2_i[fiber_id_selection[0]:fiber_id_selection[-1]+1]
@@ -169,8 +173,12 @@ def double_spectrum_one_fig(RPO_list,
             bar_width = 8
         plt.bar(fiber_frequencies, normal_spectrum_i, width=bar_width, alpha=alpha, color=color_i)
         plt.bar(fiber_frequencies, normal_spectrum_s, width=bar_width, alpha=alpha, color=color_s)
-        filter_sig_i = butter_lowpass_filter(normal_spectrum_i, cut_off_freq, len(normal_spectrum_i), filter_order)
-        filter_sig_s = butter_lowpass_filter(normal_spectrum_s, cut_off_freq, len(normal_spectrum_s), filter_order)
+        if filter_type == 'butter':
+            filter_sig_i = butter_lowpass_filter(normal_spectrum_i, cut_off_freq, len(normal_spectrum_i), filter_order)
+            filter_sig_s = butter_lowpass_filter(normal_spectrum_s, cut_off_freq, len(normal_spectrum_s), filter_order)
+        elif filter_type == 'mavg':
+            filter_sig_i = symmetric_moving_average(normal_spectrum_i, window_size=window_size)
+            filter_sig_s = symmetric_moving_average(normal_spectrum_s, window_size=window_size)
         plt.plot(fiber_frequencies, filter_sig_i, color=color_i, label='inverted')
         plt.plot(fiber_frequencies, filter_sig_s, color=color_s, label='standard')
         plt.ylim((0,1))
@@ -318,7 +326,7 @@ def CS_off_vs_on(alpha_i, alpha_s, alpha2_i, alpha2_s, # alpha = 0.5
 
 if __name__ == "__main__":
 
-    dB = 50
+    dB = 65
     # data_dir = './data/spectrum/' + str(dB) + 'dB/'
     data_dir = './data/spectrum/' + str(dB) + 'dB_2416CF/'
     # pick figure
@@ -336,11 +344,13 @@ if __name__ == "__main__":
     # fig characteristics
     filter_bool = True # filter spike spectrum
     alpha_05_bool = False # use EH with sort of CS off, always the peak in the middle of the electrodes
+    filter_type = 'mavg' # 'mavg' / 'butter'
     vlines_nh = False
     vlines_eh = False
     v_ellips = True
     filter_order = 4
     cut_off_freq = 100
+    window_size = 33 # for moving average filter
     # for single spectrum
     type_phase = 'i1' #'i1' / 's'
     color_s = 'blue'
@@ -415,8 +425,8 @@ if __name__ == "__main__":
 
 
     if double_spectrum_one_fig_bool:
-        fig = double_spectrum_one_fig(RPO_list, vlines_nh=vlines_nh, vlines_eh=vlines_eh, octave_spaced=octave_spaced)
-        fig.savefig('./figures/spectrum/EH_NH_onefig_filteredNewFreqAxis_'+ vline_nh_str + vline_eh_str + octave_str + '_'.join(RPO_list) + 'RPO_'+ str(dB)+'dB_111.6dB'+ color_s + color_i +'.png')
+        fig = double_spectrum_one_fig(RPO_list, vlines_nh=vlines_nh, vlines_eh=vlines_eh, octave_spaced=octave_spaced, filter_type=filter_type)
+        fig.savefig('./figures/spectrum/EH_NH_onefig_'+ filter_type +'filteredNewFreqAxis_'+ vline_nh_str + vline_eh_str + octave_str + '_'.join(RPO_list) + 'RPO_'+ str(dB)+'dB_111.6dB'+ color_s + color_i +'.png')
 
     if single_spectrum_bool or double_spectrum_bool:
         for r_i, RPO in enumerate(RPO_list):
@@ -490,6 +500,11 @@ if __name__ == "__main__":
         electric_spectrum_s_alpha05, electric_spectrum2_s_alpha05 = get_normalized_spectrum(fname_EH_s_alpha05, filter_bool)
         electric_spectrum_i_CS, electric_spectrum2_i_CS = get_normalized_spectrum(fname_EH_i_CS, filter_bool)
         electric_spectrum_s_CS, electric_spectrum2_s_CS = get_normalized_spectrum(fname_EH_s_CS, filter_bool)
+        if filter_type == 'mavg':
+            electric_spectrum2_i_alpha05 = symmetric_moving_average(electric_spectrum_i_alpha05, window_size=window_size)
+            electric_spectrum2_s_alpha05 = symmetric_moving_average(electric_spectrum_s_alpha05, window_size=window_size)
+            electric_spectrum2_i_CS = symmetric_moving_average(electric_spectrum_i_CS, window_size=window_size) 
+            electric_spectrum2_s_CS = symmetric_moving_average(electric_spectrum_s_CS, window_size=window_size)
 
         squared_difference_CS = sum((electric_spectrum_s_CS-electric_spectrum_i_CS)**2)
         squared_difference_alpha = sum((electric_spectrum_s_alpha05-electric_spectrum_i_alpha05)**2)
@@ -515,5 +530,5 @@ if __name__ == "__main__":
                  CS_i=electric_spectrum_i_CS, CS_s=electric_spectrum_s_CS, CS2_i=electric_spectrum2_i_CS, CS2_s=electric_spectrum2_s_CS,
                  filter_bool=filter_bool, vlines=vlines_eh, v_ellips=v_ellips, octave_spaced=octave_spaced)
         plt.suptitle('Ripple density: ' + RPO + ' RPO')
-        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_filteredNewFreqAxis_' + v_ellips_str + RPO + 'RPO'+ str(dB)+'dB_111.6dB'+ color_s + color_i + octave_str + '.png')
+        fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + filter_type + 'filteredNewFreqAxis_' + v_ellips_str + RPO + 'RPO'+ str(dB)+'dB_111.6dB'+ color_s + color_i + octave_str + '.png')
     plt.show()

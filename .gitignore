@@ -6,4 +6,5 @@
 /output
 
 *.sh
-*.slurm
+*.slurmvenv
+*out

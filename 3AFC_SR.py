@@ -563,7 +563,7 @@ if __name__ == "__main__":
 
     filter_bool = True  # Set to False if you don't want to filter the spectra
     filter_type = 'mavg'  # 'butter' or 'mavg'
-    phase_trials = 30  # Number of phase trials to average over
+    phase_trials = 25  # Number of phase trials to average over
     RPO_list = [0.125, 0.176, 0.250, 0.354, 0.500, 0.707, 1.000, 1.414, 2.000, 2.828, 4.000, 5.657, 8.000, 11.314] #
     window_size = 33
     add_noise = None # None if no noise is to be added, or a float value for the standard deviation of the noise

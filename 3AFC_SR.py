@@ -558,7 +558,7 @@ if __name__ == "__main__":
     run_single_noise = False
     run_multiple_noise = True
     load_created_output = False
-    hearing_type = 'NH'
+    hearing_type = 'EH'
     true_axis = False  # Set to True if you want the x-axis to be the RPO, False if you want the x-axis to be the index of the RPO
 
     filter_bool = True  # Set to False if you don't want to filter the spectra
@@ -572,12 +572,21 @@ if __name__ == "__main__":
     metric= 'd'  # Change this to 'c' for correlation  
     
 
-    if hearing_type == 'EH':
-        data_dir = './data/spectrum/65dB_2416CF/all_phases/EH/'
-        if CS_off:
-            data_dir = 'S:\\python\\temporal-phast-plus\\output\\'# './data/spectrum/65dB_2416CF/all_phases/noCS/'
-    elif hearing_type == 'NH':
-        data_dir = 'S:\\Matlab\\BEZ2018model\\Output\\' #'./data/spectrum/65dB_2416CF/'
+    if platform.system() == 'Windows':
+        if hearing_type == 'EH':
+            data_dir = './data/spectrum/65dB_2416CF/all_phases/EH/'
+            if CS_off:
+                data_dir = 'S:\\python\\temporal-phast-plus\\output\\'# './data/spectrum/65dB_2416CF/all_phases/noCS/'
+        elif hearing_type == 'NH':
+            data_dir = 'S:\\Matlab\\BEZ2018model\\Output\\' #'./data/spectrum/65dB_2416CF/'
+    elif platform.system() == 'Linux':
+        if hearing_type == 'EH':
+                if CS_off:
+                    data_dir = '/exports/kno-shark/users/Savine/python/temporal-phast-plus/output/'
+                else:
+                    raise ValueError('CS not on cluster')
+        elif hearing_type == 'NH':
+            data_dir = '/exports/kno-shark/users/Savine/Matlab/BEZ2018model/Output/'
 
 
     char_str = ''

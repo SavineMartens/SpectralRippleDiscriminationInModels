@@ -88,12 +88,29 @@ def load_matrices_from_vectors_Bruce_multi_trial(fname):
         row_indices = trial_row_indices[int(trial_idx[trial])-1:int(trial_idx[trial+1])]
         column_indices = trial_column_indices[int(trial_idx[trial])-1:int(trial_idx[trial+1])]
         values = trial_values[int(trial_idx[trial])-1:int(trial_idx[trial+1])]
-        print(len(row_indices))
         for row, column, value in zip(row_indices, column_indices, values):
             trials_neurogram[trial, row-1, column-1] = int(value)
     summed_neurogram = np.sum(spike_rate_unfiltered, axis=0) # sum over trials
     return summed_neurogram, trials_neurogram, sound_name, dBlevel, fiber_frequencies, t_unfiltered
 
+from scipy.optimize import curve_fit
+def sigmoid(x, L ,x0, k, b):
+    # L is responsible for scaling the output range from [0,1] to [0,L]
+    # b adds bias to the output and changes its range from [0,L] to [b,L+b]
+    # k is responsible for scaling the input, which remains in (-inf,inf)
+    # x0 is the point in the middle of the Sigmoid, i.e. the point where Sigmoid should originally output the value 1/2 [since if x=x0, we get 1/(1+exp(0)) = 1/2].
+    # b = max(33, b)
+    # L = min(100-b, L)
+    y = L / (1 + np.exp(-k*(x-x0))) + b
+    return (y)
+
+def fit_sigmoid(xdata, ydata):
+            # L              x0            k  b 
+    p0 =    [100-33.333, np.median(xdata), 1, 33] #[max(ydata), np.median(xdata), 1, min(ydata)] # this is an mandatory initial guess
+    # bounds = ((33),(100))
+    popt, pcov = curve_fit(sigmoid, xdata, ydata, p0, method='dogbox', maxfev=1e6)
+    y = sigmoid(xdata, *popt)
+    return y
 
 def find_closest_index(array, value):
     idx = (np.abs(array - value)).argmin()

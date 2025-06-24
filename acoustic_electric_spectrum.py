@@ -344,7 +344,7 @@ if __name__ == '__main__':
 
     if test_type == 'SR':
         data_dir = './data/spectrum' 
-        sound_dir = 'C:\\Users\\ssmmartens\\OneDrive - LUMC\\Sounds\Ripple\\' #'./sounds/spectral ripple/'
+        sound_dir = 'C:\\Users\\ssmmartens\\OneDrive - LUMC\\Sounds\\Ripple\\' #'./sounds/spectral ripple/'
 
         # color_s = 'blue'
         # color_i = 'red'

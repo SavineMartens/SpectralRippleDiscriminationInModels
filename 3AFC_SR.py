@@ -558,7 +558,7 @@ if __name__ == "__main__":
     run_single_noise = False
     run_multiple_noise = True
     load_created_output = False
-    hearing_type = 'EH'
+    hearing_type = 'NH'
     true_axis = False  # Set to True if you want the x-axis to be the RPO, False if you want the x-axis to be the index of the RPO
 
     filter_bool = False  # Set to False if you don't want to filter the spectra

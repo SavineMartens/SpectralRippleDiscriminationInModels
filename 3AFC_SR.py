@@ -561,7 +561,7 @@ if __name__ == "__main__":
     hearing_type = 'EH'
     true_axis = False  # Set to True if you want the x-axis to be the RPO, False if you want the x-axis to be the index of the RPO
 
-    filter_bool = False  # Set to False if you don't want to filter the spectra
+    filter_bool = True  # Set to False if you don't want to filter the spectra
     filter_type = 'mavg'  # 'butter' or 'mavg'
     phase_trials = 25  # Number of phase trials to average over
     RPO_list = [0.125, 0.176, 0.250, 0.354, 0.500, 0.707, 1.000, 1.414, 2.000, 2.828, 4.000, 5.657, 8.000, 11.314] #

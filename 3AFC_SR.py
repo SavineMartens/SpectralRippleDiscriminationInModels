@@ -568,7 +568,7 @@ if __name__ == "__main__":
     window_size = 33
     add_noise = None # None if no noise is to be added, or a float value for the standard deviation of the noise
     save_bool = True  # Set to True if you want to save the results
-    CS_off = False
+    CS_off = True
     metric= 'd'  # Change this to 'c' for correlation  
     
 

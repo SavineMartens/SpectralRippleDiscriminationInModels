@@ -601,8 +601,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # if not on cluster:
-    args.filter = False
-    args.CS_off = True
+    # args.filter = False
+    # args.CS_off = True
 
     # various tasks
     run_single_noise = False

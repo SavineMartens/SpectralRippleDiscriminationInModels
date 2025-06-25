@@ -19,7 +19,7 @@ from scipy.integrate import quad
 freq_x_fft = np.load('./data/AB_MS_based_on_min_filtered_thresholdsfreq_x_fft.npy')
 fiber_id_selection = np.load('./data/AB_MS_based_on_min_filtered_thresholdsfiber_ID_list_FFT.npy')
 # data_dir = './data/spectrum/65dB_2416CF/all_phases/'
-spectrum_dir = '.\\data\\spectrum\\65dB_2416CF\\all_phases\\NH\\'
+spectrum_dir = './data/spectrum/65dB_2416CF/all_phases/NH/'
 
 def dprime_to_pc_3afc_sim(dprime, n_trials):
     """
@@ -558,17 +558,17 @@ if __name__ == "__main__":
     run_single_noise = False
     run_multiple_noise = True
     load_created_output = False
-    hearing_type = 'NH'
+    hearing_type = 'EH'
     true_axis = False  # Set to True if you want the x-axis to be the RPO, False if you want the x-axis to be the index of the RPO
 
-    filter_bool = True  # Set to False if you don't want to filter the spectra
+    filter_bool = False  # Set to False if you don't want to filter the spectra
     filter_type = 'mavg'  # 'butter' or 'mavg'
     phase_trials = 25  # Number of phase trials to average over
     RPO_list = [0.125, 0.176, 0.250, 0.354, 0.500, 0.707, 1.000, 1.414, 2.000, 2.828, 4.000, 5.657, 8.000, 11.314] #
     window_size = 33
     add_noise = None # None if no noise is to be added, or a float value for the standard deviation of the noise
     save_bool = True  # Set to True if you want to save the results
-    CS_off = True
+    CS_off = False
     metric= 'd'  # Change this to 'c' for correlation  
     
 
@@ -694,7 +694,7 @@ if __name__ == "__main__":
             plt.legend()
             print('threshold = ', threshold, ' for noise = ', add_noise)
             if save_bool:
-                fig2.savefig('./figures/3AFC_SR_' + hearing_type + '_RPO_' + str(RPO_list) + '_' + char_str + '_PC.png')
+                fig2.savefig('./figures/spectrum/3AFC/3AFC_SR_' + hearing_type + '_RPO_' + str(RPO_list) + '_' + char_str + '_PC.png')
 
     if run_multiple_noise:
         noise_list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]#[0.0, 0.01, 0.02, 0.03, 0.04, 0.05]

@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import platform
 from scipy.stats import norm
 from scipy.integrate import quad
+import argparse
 
 # TO DO:
 # [X] NH with trials
@@ -166,7 +167,7 @@ def load_trials_from_train(fname,
             num_trials, num_fibers = trial_matrix.shape
             for t in range(num_trials):
                 spectrum = trial_matrix[t, :]
-                if add_noise:
+                if add_noise and add_noise > 0:
                     noise = np.random.normal(0, add_noise, spectrum.shape)
                     spectrum += noise  # Add noise to the spectrum
                 # Apply filter if specified
@@ -394,7 +395,7 @@ def get_3AFC_RPO_separate_phase(RPO,
 
     successful_trials = 0
     phase_trial = 1 
-    while successful_trials < phase_trials and phase_trial < 30:
+    while successful_trials <= phase_trials and phase_trial <= 30:
     # for phase_trial in range(1,phase_trials+1):
         print(f'Processing RPO {RPO} - {hearing_type} at phase {phase_trial}')
         try:
@@ -554,40 +555,104 @@ def run_dprime_multi_noise(RPO,
     return dprime_matrix, PC_matrix
 
 
+def check_files(hearing_type,
+                data_dir,
+                RPO_list): 
+    print(f'Checking files in {data_dir} for hearing type: {hearing_type}')
+    list_to_make = []
+    for RPO in RPO_list:
+        if type(RPO) == float:
+            RPO = str(RPO)
+        print(f'Checking files for RPO: {RPO}, Hearing Type: {hearing_type}')
+        for phase_trial in range(1, 31):
+            print(f'Phase Trial: {phase_trial}')
+            try:
+                if hearing_type == 'NH':
+                    fname_i1 = glob.glob(data_dir + '*multi*i1*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
+                elif hearing_type == 'EH':
+                    fname_i1 = glob.glob(data_dir + '2025*trains_[!alpha05]*i1*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]
+            except:
+                print('i1_'+ RPO + '_' + str(phase_trial) + ' does not exist')
+                list_to_make.append('i1_'+ RPO + '_' + str(phase_trial))
+            try:
+                if hearing_type == 'NH':
+                    fname_i2 = glob.glob(data_dir + '*multi*i2*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
+                elif hearing_type == 'EH':
+                    fname_i2 = glob.glob(data_dir + '2025*trains_[!alpha05]*i2*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]  
+            except:
+                print('i2_'+ RPO + '_' + str(phase_trial) + ' does not exist')
+                list_to_make.append('i2_'+ RPO + '_' + str(phase_trial))
+            try:
+                if hearing_type == 'NH':
+                    fname_s = glob.glob(data_dir + '*multi*_s_*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
+                elif hearing_type == 'EH':
+                    fname_s = glob.glob(data_dir + '2025*trains_[!alpha05]*_s_*' + RPO + '*_'+str(phase_trial)+'.npy')[0]
+            except:
+                print('s_'+ RPO + '_' + str(phase_trial) + ' does not exist')
+                list_to_make.append('s_'+ RPO + '_' + str(phase_trial))
+    return list_to_make
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-trials', type=int, help="Number of phase trials.", default=30)
+    parser.add_argument('-type', help='NH or EH', default='EH')
+    parser.add_argument('-filter', action='store_true')
+    parser.add_argument('-CS_off', action='store_true', help='Current steering off')
+    args = parser.parse_args()
+
+    # if not on cluster:
+    args.filter = False
+    args.CS_off = True
+
+    # various tasks
     run_single_noise = False
     run_multiple_noise = True
     load_created_output = False
-    hearing_type = 'NH'
+    check_files_bool = False  # Set to True if you want to check which files need to be created
+
+    hearing_type = args.type  # 'NH' or 'EH'
     true_axis = False  # Set to True if you want the x-axis to be the RPO, False if you want the x-axis to be the index of the RPO
 
-    filter_bool = False  # Set to False if you don't want to filter the spectra
+    filter_bool = args.filter  # Set to False if you don't want to filter the spectra
     filter_type = 'mavg'  # 'butter' or 'mavg'
-    phase_trials = 25  # Number of phase trials to average over
+    phase_trials = args.trials  # Number of phase trials to average over
     RPO_list = [0.125, 0.176, 0.250, 0.354, 0.500, 0.707, 1.000, 1.414, 2.000, 2.828, 4.000, 5.657, 8.000, 11.314] #
     window_size = 33
     add_noise = None # None if no noise is to be added, or a float value for the standard deviation of the noise
     save_bool = True  # Set to True if you want to save the results
-    CS_off = True
+    CS_off = args.CS_off
     metric= 'd'  # Change this to 'c' for correlation  
     
 
     if platform.system() == 'Windows':
         if hearing_type == 'EH':
+            print('Using EH hearing type')
             data_dir = './data/spectrum/65dB_2416CF/all_phases/EH/'
             if CS_off:
+                print('with CS off')
                 data_dir = 'S:\\python\\temporal-phast-plus\\output\\'# './data/spectrum/65dB_2416CF/all_phases/noCS/'
         elif hearing_type == 'NH':
+            print('Using NH hearing type')
             data_dir = 'S:\\Matlab\\BEZ2018model\\Output\\' #'./data/spectrum/65dB_2416CF/'
     elif platform.system() == 'Linux':
+        import matplotlib
+        matplotlib.use('Agg') 
         if hearing_type == 'EH':
-                if CS_off:
-                    data_dir = '/exports/kno-shark/users/Savine/python/temporal-phast-plus/output/'
-                else:
-                    raise ValueError('CS not on cluster')
+            print('Using EH hearing type')
+            if CS_off:
+                print('with CS off')
+                data_dir = '/exports/kno-shark/users/Savine/python/temporal-phast-plus/output/'
+            else:
+                raise ValueError('CS not on cluster')
         elif hearing_type == 'NH':
+            print('Using NH hearing type')
             data_dir = '/exports/kno-shark/users/Savine/Matlab/BEZ2018model/Output/'
 
+
+    if check_files_bool:
+        # Check if the files exist
+        list_to_make = check_files(hearing_type, data_dir, RPO_list)
+        print('Files to make: ', list_to_make)
 
     char_str = ''
     if filter_bool:
@@ -699,6 +764,7 @@ if __name__ == "__main__":
     if run_multiple_noise:
         noise_list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]#[0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
         char_str += ' and noise'
+    
         dprime_matrix, PC_matrix = run_dprime_multi_noise(RPO_list,
                                                             hearing_type, 
                                                             noise_list, 
@@ -748,7 +814,6 @@ if __name__ == "__main__":
         plt.legend()
         plt.ylim((30, 100))
         plt.title('Spectral ripple test  ('+ str(phase_trials) +' trials) with ' + hearing_type + ' ' + char_str )
-
         
         if true_axis:
             plt.xticks(RPO_list, labels=[str(int(rpo)) for rpo in RPO_list], rotation=45)
@@ -774,12 +839,13 @@ if __name__ == "__main__":
 
     if load_created_output:
         import matplotlib as mpl
-        fig4, axs = plt.subplots(3, 2, figsize=(10, 5), sharex=True, sharey=True)  
+        fig4, axs = plt.subplots(3, 2, figsize=(11, 9.5), sharex=True, sharey=True)    
         axs = axs.flatten()     
         true_axis = False
-
+        noise_list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
         hearing_type_list = ['NH', 'NH', 'EH', 'EH', 'EH (CS off)', 'EH (CS off)']
         char_str_list = ['no filter', 'filter (window=33)', 'no filter', 'filter (window=33)', 'no filter', 'filter (window=33)']
+        corner_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
 
         # create colour map
         n_lines = len(noise_list)
@@ -791,7 +857,12 @@ if __name__ == "__main__":
         else:
             plt.xlim((0, len(RPO_list)))
 
+        plt.subplots_adjust(wspace=0.05, hspace=0.1, left=0.08, right=0.81, top=0.95, bottom=0.1)  
+        import matplotlib.transforms as mtransforms # labeling axes
+        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig4.dpi_scale_trans)
+
         for ax, hearing_type, char_str in zip(axs, hearing_type_list, char_str_list):
+            char_str += ' and noise'
             # Load the saved output
             data = np.load('./output/3AFC_SR_' + hearing_type + '_' + str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.npy', allow_pickle=True).item()
             threshold_list = data['threshold']
@@ -799,26 +870,45 @@ if __name__ == "__main__":
             RPO_list = data['RPO_list']
             PC_matrix = data['PC_matrix']
             noise_list = data['noise_list']
+            fit_list = data['fit']
 
             for n, add_noise in enumerate(noise_list):
+                threshold = threshold_list[n]
                 if true_axis:
                     ax.plot(RPO_list[:len(PC_matrix[n,:,0])], PC_matrix[n, :, 0], 'o', color=colors[n])
                     ax.plot(RPO_list[:len(PC_matrix[n,:,1])], PC_matrix[n, :, 1], 'o', color=colors[n])
-                    ax.plot(RPO_list, y, label=f'fit with noise={add_noise}, threshold={round(threshold,2)}', color=colors[n])
+                    ax.plot(RPO_list, fit_list[n,:], label=f'noise={add_noise}, threshold={round(threshold,2)}', color=colors[n])
                 else:
-                    ax.plot(RPO_list[:len(PC_matrix[n,:,0])], PC_matrix[n, :, 0], 'o', color=colors[n])
-                    ax.plot(RPO_list[:len(PC_matrix[n,:,1])], PC_matrix[n, :, 1], 'o', color=colors[n])
-                    ax.plot(y, label=f'fit with noise={add_noise}, threshold={round(threshold,2)}', color=colors[n])
-            ax.hlines(33.33333, min(RPO_list), max(RPO_list), colors='black', linestyles='dashed', label='Chance level (33.333%)')
-            ax.hlines((100+33.33333)/2, min(RPO_list), max(RPO_list), colors='black', linestyles='dotted', label='Threshold (66.667%)')
+                    ax.plot(PC_matrix[n, :, 0], 'o', color=colors[n])
+                    ax.plot(PC_matrix[n, :, 1], 'o', color=colors[n])
+                    ax.plot(fit_list[n,:], label=f'threshold={round(threshold,2)}', color=colors[n])
+            if not true_axis:
+                ax.set_xticks(range(len(RPO_list)-1), labels=[str((rpo)) for rpo in RPO_list[:-1]], rotation=45)
+            h1 = ax.hlines(33.33333, min(RPO_list), max(RPO_list), colors='black', linestyles='dashed', label=str()) # 
+            h2 = ax.hlines((100+33.33333)/2, min(RPO_list), max(RPO_list), colors='black', linestyles='dotted', label=str()) 
+            ax.set_ylim((30, 101))
+            ax.text(-0.015, 0.1, corner_labels[n], transform=ax.transAxes + trans,
+                fontsize=18, verticalalignment='top', fontfamily='Open Sans', color='black')
+
             if ax == axs[0] or ax == axs[2] or ax == axs[4]:
-                ax.set_ylabel(hearing_type + '\n Percentage correct')
+                ax.set_ylabel(hearing_type + '\n Percentage correct (%)', fontsize=16)
+                # r'\fontsize{30pt}{3em}\selectfont{}{Mean WRFv3.5 LHF\r}{\fontsize{18pt}{3em}\selectfont{}(September 16 - October 30, 2012)}'
             if ax == axs[4] or ax == axs[5]:
-                ax.set_xlabel('RPO')
-            if ax == axs[0] or ax == axs[1]:
-                ax.set_title(char_str)
+                ax.set_xlabel('Ripple density (RPO)')
+            if ax == axs[0]:
+                ax.set_title('Filtered', fontsize=18)
+            if ax == axs[1]:
+                ax.set_title('Unfiltered', fontsize=18)
             # ax.set_ylabel('Percent Correct')
             # ax.set_xlabel('RPO')
             ax.legend()
-
+        h, _ = axs[1].get_legend_handles_labels()
+        h.append(h1)
+        h.append(h2)
+        label_list = []
+        for l in range(len(noise_list)):
+            label_list.append(f'noise$_\\sigma$={noise_list[l]}')
+        label_list.append('Chance (33.333%)')
+        label_list.append('Threshold (66.667%)')
+        fig4.legend(h, label_list,  loc='right', bbox_to_anchor=(0.9999, 0.5), fontsize=10)
     plt.show()

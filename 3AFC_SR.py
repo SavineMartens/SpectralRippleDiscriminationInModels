@@ -397,32 +397,32 @@ def get_3AFC_RPO_separate_phase(RPO,
     phase_trial = 1 
     while successful_trials <= phase_trials and phase_trial <= 30:
     # for phase_trial in range(1,phase_trials+1):
-        print(f'Processing RPO {RPO} - {hearing_type} at phase {phase_trial}')
-        try:
-            if hearing_type == 'NH':    
-                # get NH
-                fname_i1 = glob.glob(data_dir + '*multi*i1*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
-                print(fname_i1)
-                fname_i2 = glob.glob(data_dir + '*multi*i2*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
-                print(fname_i2)
-                fname_s = glob.glob(data_dir + '*multi*_s_*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
-                print(fname_s)
-                
-                if 'filter' in fname_i1:
-                    if metric == 'd':
-                        print('cannot use d′ for old Bruce struct')
-                        metric = 'c'
-                        num_trials = 1
-            elif hearing_type == 'EH':                
-                # # get EH
-                fname_i1 = glob.glob(data_dir + '2025*trains_[!alpha05]*i1*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]
-                fname_i2 = glob.glob(data_dir + '2025*trains_[!alpha05]*i2*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]
-                fname_s = glob.glob(data_dir + '2025*trains_[!alpha05]*_s_*' + RPO + '*_'+str(phase_trial)+'.npy')[0]
+        # print(f'Processing RPO {RPO} - {hearing_type} at phase {phase_trial}')
+        # try:
+        if hearing_type == 'NH':    
+            # get NH
+            fname_i1 = glob.glob(data_dir + '*multi*i1*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
+            print(fname_i1)
+            fname_i2 = glob.glob(data_dir + '*multi*i2*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
+            print(fname_i2)
+            fname_s = glob.glob(data_dir + '*multi*_s_*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
+            print(fname_s)
+            
+            if 'filter' in fname_i1:
+                if metric == 'd':
+                    print('cannot use d′ for old Bruce struct')
+                    metric = 'c'
+                    num_trials = 1
+        elif hearing_type == 'EH':                
+            # # get EH
+            fname_i1 = glob.glob(data_dir + '2025*trains_[!alpha05]*i1*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]
+            fname_i2 = glob.glob(data_dir + '2025*trains_[!alpha05]*i2*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]
+            fname_s = glob.glob(data_dir + '2025*trains_[!alpha05]*_s_*' + RPO + '*_'+str(phase_trial)+'.npy')[0]
 
-        except:
-            print(f"Error loading files for RPO {RPO} - {hearing_type} at phase {phase_trial}. Skipping...")
-            phase_trial += 1
-            continue
+        # except:
+        #     print(f"Error loading files for RPO {RPO} - {hearing_type} at phase {phase_trial}. Skipping...")
+        #     phase_trial += 1
+        #     continue
         # load trials
         trial_matrix_i1 = load_trials_from_train(fname_i1, filter_bool=filter_bool, filter_type=filter_type, window_size=window_size, add_noise=add_noise)
         trial_matrix_i2 = load_trials_from_train(fname_i2, filter_bool=filter_bool, filter_type=filter_type, window_size=window_size, add_noise=add_noise)
@@ -431,8 +431,9 @@ def get_3AFC_RPO_separate_phase(RPO,
 
         if trial_matrix_i1 is None or trial_matrix_i2 is None or trial_matrix_s is None:
             print(f"Error loading trials for RPO {RPO} - {hearing_type} at phase {phase_trial}. Skipping...")
+            breakpoint()
             phase_trial += 1
-            continue
+            # continue
 
         phase_trial += 1
         successful_trials += 1
@@ -571,6 +572,11 @@ def check_files(hearing_type,
                     fname_i1 = glob.glob(data_dir + '*multi*i1*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
                 elif hearing_type == 'EH':
                     fname_i1 = glob.glob(data_dir + '2025*trains_[!alpha05]*i1*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]
+                    trains = np.load(fname_i1, allow_pickle=True)
+                    num_fibers, _ = trains.shape
+                    if num_fibers != 3200:
+                        list_to_make.append('i1_'+ RPO + '_' + str(phase_trial))
+                        print(f'File i1_{RPO}_{phase_trial} does not have 3200 fibers, found {num_fibers}.')
             except:
                 print('i1_'+ RPO + '_' + str(phase_trial) + ' does not exist')
                 list_to_make.append('i1_'+ RPO + '_' + str(phase_trial))
@@ -578,7 +584,12 @@ def check_files(hearing_type,
                 if hearing_type == 'NH':
                     fname_i2 = glob.glob(data_dir + '*multi*i2*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
                 elif hearing_type == 'EH':
-                    fname_i2 = glob.glob(data_dir + '2025*trains_[!alpha05]*i2*'  + RPO + '*_'+str(phase_trial)+'.npy')[0]  
+                    fname_i2 = glob.glob(data_dir + '2025*trains_[!alpha05]*i2*'  + RPO + '*_'+str(phase_trial)+'.npy')[0] 
+                    trains = np.load(fname_i2, allow_pickle=True)
+                    num_fibers, _ = trains.shape
+                    if num_fibers != 3200:
+                        list_to_make.append('i2_'+ RPO + '_' + str(phase_trial)) 
+                        print(f'File i2_{RPO}_{phase_trial} does not have 3200 fibers, found {num_fibers}.')
             except:
                 print('i2_'+ RPO + '_' + str(phase_trial) + ' does not exist')
                 list_to_make.append('i2_'+ RPO + '_' + str(phase_trial))
@@ -587,6 +598,11 @@ def check_files(hearing_type,
                     fname_s = glob.glob(data_dir + '*multi*_s_*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
                 elif hearing_type == 'EH':
                     fname_s = glob.glob(data_dir + '2025*trains_[!alpha05]*_s_*' + RPO + '*_'+str(phase_trial)+'.npy')[0]
+                    trains = np.load(fname_s, allow_pickle=True)
+                    num_fibers, _ = trains.shape
+                    if num_fibers != 3200:
+                        list_to_make.append('s_'+ RPO + '_' + str(phase_trial))
+                        print(f'File s_{RPO}_{phase_trial} does not have 3200 fibers, found {num_fibers}.')
             except:
                 print('s_'+ RPO + '_' + str(phase_trial) + ' does not exist')
                 list_to_make.append('s_'+ RPO + '_' + str(phase_trial))
@@ -602,7 +618,7 @@ if __name__ == "__main__":
 
     # if not on cluster:
     # args.filter = False
-    # args.CS_off = True
+    # args.CS_off = False
 
     # various tasks
     run_single_noise = False

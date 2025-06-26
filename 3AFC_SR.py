@@ -92,6 +92,7 @@ def pc_m_afc(d_prime, m=3):
     # Using quad for numerical integration
     integration = quad(to_integrate, -np.inf, np.inf)[0]
     if integration < 0.01 and d_prime > 20:
+        print('overwriting result because of high d\' with low percentage correct')
         integration = 1.0
         # breakpoint()
     # Return percent correct
@@ -566,10 +567,10 @@ def run_dprime_multi_noise(RPO,
             PC_matrix[n, r, 1] = pc_m_afc(d_i2) # dprime_lookup_table(d_i2)
             PC_matrix[n, r, 2] = pc_m_afc(d_i) # dprime_lookup_table(d_i)
 
-            if PC_matrix[n, r, 0]< 10:
-                breakpoint()
-            if PC_matrix[n, r, 1]< 10:
-                breakpoint()
+            # if PC_matrix[n, r, 0]< 10:
+            #     breakpoint()
+            # if PC_matrix[n, r, 1]< 10:
+            #     breakpoint()
             x=3
 
     return dprime_matrix, PC_matrix

@@ -86,7 +86,16 @@ def interpolate_threshold(RPO_list, y, threshold=66.667):
     return interpolated_RPO
 
 def pc_m_afc(d_prime, m=3):
-    return 100 * quad(lambda x: norm.cdf(x)**(m - 1) * norm.pdf(x - d_prime), -np.inf, np.inf)[0]
+    # within integration:
+    to_integrate = lambda x: norm.cdf(x)**(m - 1) * norm.pdf(x - d_prime)
+    # Integrate from -inf to inf
+    # Using quad for numerical integration
+    integration = quad(to_integrate, -np.inf, np.inf)[0]
+    if integration < 0.01 and d_prime > 20:
+        integration = 1.0
+        # breakpoint()
+    # Return percent correct
+    return 100 * integration #quad(lambda x: norm.cdf(x)**(m - 1) * norm.pdf(x - d_prime), -np.inf, np.inf)[0]
 
 
 def get_normalized_spectrum(fname, 
@@ -162,7 +171,7 @@ def load_trials_from_train(fname,
         numpy_name = os.path.basename(fname.replace('.mat', '.npy'))
         numpy_name =  numpy_name.replace('PSTH','spectrum') # Change PSTH to spectrum
         if os.path.exists(spectrum_dir + numpy_name):
-            print(f"File {numpy_name} already exists. Skipping loading and processing.")
+            # print(f"File {numpy_name} already exists. Skipping loading and processing.")
             trial_matrix =  np.load(spectrum_dir + numpy_name, allow_pickle=True)
             num_trials, num_fibers = trial_matrix.shape
             for t in range(num_trials):
@@ -175,36 +184,39 @@ def load_trials_from_train(fname,
                     spectrum = apply_filter(spectrum, filter_type, filter_order, cut_off_freq, window_size)
                 trial_matrix[t, :] = spectrum
             return trial_matrix
-        if 'filter' in fname:
-            neurogram, _ , _, _, _, _, _, _ = load_matrices_from_vectors_Bruce_struct(fname)        
-            num_trials = 1
-        if 'multi' in fname:
-            _, neurogram, _, _, _, _ = load_matrices_from_vectors_Bruce_multi_trial(fname)
-            [num_trials, _, _] = neurogram.shape
-        trial_matrix = np.zeros((num_trials, len(fiber_id_selection)))
-        for t in range(num_trials):
-            if len(neurogram.shape) == 3:
-                spectrum = np.sum(neurogram[t, :, :], axis=-1)  # Sum across time steps
-            elif len(neurogram.shape) == 2:
-                spectrum = np.sum(neurogram, axis=-1)  # Sum across time steps
-            # normalize the spectrum
-            spectrum = (spectrum - np.min(spectrum)) / (np.max(spectrum) - np.min(spectrum))
-            if add_noise:
-                noise = np.random.normal(0, add_noise, spectrum.shape)
-                spectrum += noise  # Add noise to the spectrum
-            # Apply filter if specified
-            if filter_bool:
-                spectrum = apply_filter(spectrum, filter_type, filter_order, cut_off_freq, window_size)
-            trial_matrix[t, :] = spectrum
+        else:
+            print(f"File {numpy_name} does not exist. Loading and processing {fname}.")
+            if 'filter' in fname:
+                neurogram, _ , _, _, _, _, _, _ = load_matrices_from_vectors_Bruce_struct(fname)        
+                num_trials = 1
+            if 'multi' in fname:
+                _, neurogram, _, _, _, _ = load_matrices_from_vectors_Bruce_multi_trial(fname)
+                [num_trials, _, _] = neurogram.shape
+            trial_matrix = np.zeros((num_trials, len(fiber_id_selection)))
+            for t in range(num_trials):
+                if len(neurogram.shape) == 3:
+                    spectrum = np.sum(neurogram[t, :, :], axis=-1)  # Sum across time steps
+                elif len(neurogram.shape) == 2:
+                    spectrum = np.sum(neurogram, axis=-1)  # Sum across time steps
+                # normalize the spectrum
+                spectrum = (spectrum - np.min(spectrum)) / (np.max(spectrum) - np.min(spectrum))
+                if add_noise:
+                    noise = np.random.normal(0, add_noise, spectrum.shape)
+                    spectrum += noise  # Add noise to the spectrum
+                # Apply filter if specified
+                if filter_bool:
+                    spectrum = apply_filter(spectrum, filter_type, filter_order, cut_off_freq, window_size)
+                trial_matrix[t, :] = spectrum
         if not filter_bool and not add_noise:
             np.save(spectrum_dir + numpy_name, trial_matrix, allow_pickle=True)
-            if fname.startswith('S:\\'):
-                fname = fname.replace(data_dir, 'C:\\python\\SpectralRippleDiscriminationInModels\\data\\spectrum\\65dB_2416CF\\')
-                try:
-                    os.remove(fname)  # Remove the .mat file if on Windows
-                    print(f"Removed {fname} after saving as .npy")
-                except:
-                    print(f"Could not remove {fname}. Has already been deleted.")
+            if platform.system() == 'Windows':
+                if fname.startswith('S:\\'):
+                    fname = fname.replace(data_dir, 'C:\\python\\SpectralRippleDiscriminationInModels\\data\\spectrum\\65dB_2416CF\\')
+                    try:
+                        os.remove(fname)  # Remove the .mat file if on Windows
+                        print(f"Removed {fname} after saving as .npy")
+                    except:
+                        print(f"Could not remove {fname}. Has already been deleted.")
     elif '.npy' in fname:
         trains = np.load(fname, allow_pickle=True)
         num_fibers, num_trials = trains.shape
@@ -474,6 +486,7 @@ def get_3AFC_RPO_separate_phase(RPO,
             metric_i2 = collected_metrics["d_prime_s_vs_i2"]
             metric_i = collected_metrics["d_prime_i1_vs_i2"]
 
+
         elif metric == 'c' or metric=='correlation':
             # Compute correlation
             metric_str = 'correlation'
@@ -553,6 +566,12 @@ def run_dprime_multi_noise(RPO,
             PC_matrix[n, r, 1] = pc_m_afc(d_i2) # dprime_lookup_table(d_i2)
             PC_matrix[n, r, 2] = pc_m_afc(d_i) # dprime_lookup_table(d_i)
 
+            if PC_matrix[n, r, 0]< 10:
+                breakpoint()
+            if PC_matrix[n, r, 1]< 10:
+                breakpoint()
+            x=3
+
     return dprime_matrix, PC_matrix
 
 
@@ -611,13 +630,13 @@ def check_files(hearing_type,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-trials', type=int, help="Number of phase trials.", default=30)
-    parser.add_argument('-type', help='NH or EH', default='EH')
+    parser.add_argument('-type', help='NH or EH', default='NH')
     parser.add_argument('-filter', action='store_true')
     parser.add_argument('-CS_off', action='store_true', help='Current steering off')
     args = parser.parse_args()
 
     # if not on cluster:
-    # args.filter = False
+    # args.filter = True
     # args.CS_off = False
 
     # various tasks
@@ -653,6 +672,10 @@ if __name__ == "__main__":
     elif platform.system() == 'Linux':
         import matplotlib
         matplotlib.use('Agg') 
+        run_single_noise = False
+        run_multiple_noise = True
+        load_created_output = False
+        check_files_bool = False
         if hearing_type == 'EH':
             print('Using EH hearing type')
             if CS_off:
@@ -673,8 +696,10 @@ if __name__ == "__main__":
     char_str = ''
     if filter_bool:
         char_str = 'filter (window=' + str(window_size) + ')'
+        print('using filter')
     else:
         char_str = 'no filter'
+        print('running without filter')
 
     if metric == 'd':
         metric_str = "d′" 
@@ -862,6 +887,7 @@ if __name__ == "__main__":
         hearing_type_list = ['NH', 'NH', 'EH', 'EH', 'EH (CS off)', 'EH (CS off)']
         char_str_list = ['no filter', 'filter (window=33)', 'no filter', 'filter (window=33)', 'no filter', 'filter (window=33)']
         corner_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        new_fit = True
 
         # create colour map
         n_lines = len(noise_list)
@@ -877,6 +903,7 @@ if __name__ == "__main__":
         import matplotlib.transforms as mtransforms # labeling axes
         trans = mtransforms.ScaledTranslation(10/72, -5/72, fig4.dpi_scale_trans)
 
+        a = 0
         for ax, hearing_type, char_str in zip(axs, hearing_type_list, char_str_list):
             char_str += ' and noise'
             # Load the saved output
@@ -887,6 +914,8 @@ if __name__ == "__main__":
             PC_matrix = data['PC_matrix']
             noise_list = data['noise_list']
             fit_list = data['fit']
+            if 20 in RPO_list:
+                RPO_list.remove(20)
 
             for n, add_noise in enumerate(noise_list):
                 threshold = threshold_list[n]
@@ -897,13 +926,20 @@ if __name__ == "__main__":
                 else:
                     ax.plot(PC_matrix[n, :, 0], 'o', color=colors[n])
                     ax.plot(PC_matrix[n, :, 1], 'o', color=colors[n])
-                    ax.plot(fit_list[n,:], label=f'threshold={round(threshold,2)}', color=colors[n])
+                    if new_fit:
+                        avg = (PC_matrix[n, :, 0] + PC_matrix[n, :, 1])/2
+                        y = fit_sigmoid(RPO_list, avg)
+                        threshold = float(interpolate_threshold(RPO_list, y, threshold=66.667))
+                        ax.plot(y, label=f'threshold={round(threshold,2)}', color=colors[n])
+                    else:
+                        ax.plot(fit_list[n,:], label=f'threshold={round(threshold,2)}', color=colors[n])
             if not true_axis:
-                ax.set_xticks(range(len(RPO_list)-1), labels=[str((rpo)) for rpo in RPO_list[:-1]], rotation=45)
-            h1 = ax.hlines(33.33333, min(RPO_list), max(RPO_list), colors='black', linestyles='dashed', label=str()) # 
-            h2 = ax.hlines((100+33.33333)/2, min(RPO_list), max(RPO_list), colors='black', linestyles='dotted', label=str()) 
-            ax.set_ylim((30, 101))
-            ax.text(-0.015, 0.1, corner_labels[n], transform=ax.transAxes + trans,
+                ax.set_xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
+            h1 = ax.hlines(33.33333, -1, 20, colors='black', linestyles='dashed', label=str()) # 
+            h2 = ax.hlines((100+33.33333)/2, -1, 20, colors='black', linestyles='dotted', label=str()) 
+            # ax.set_ylim((30, 101))
+            ax.set_xlim((0, len(RPO_list)-1))
+            ax.text(-0.01, 0.15, corner_labels[a], transform=ax.transAxes + trans,
                 fontsize=18, verticalalignment='top', fontfamily='Open Sans', color='black')
 
             if ax == axs[0] or ax == axs[2] or ax == axs[4]:
@@ -912,12 +948,13 @@ if __name__ == "__main__":
             if ax == axs[4] or ax == axs[5]:
                 ax.set_xlabel('Ripple density (RPO)')
             if ax == axs[0]:
-                ax.set_title('Filtered', fontsize=18)
-            if ax == axs[1]:
                 ax.set_title('Unfiltered', fontsize=18)
+            if ax == axs[1]:
+                ax.set_title('Filtered', fontsize=18)
             # ax.set_ylabel('Percent Correct')
             # ax.set_xlabel('RPO')
             ax.legend()
+            a += 1
         h, _ = axs[1].get_legend_handles_labels()
         h.append(h1)
         h.append(h2)
@@ -926,5 +963,8 @@ if __name__ == "__main__":
             label_list.append(f'noise$_\\sigma$={noise_list[l]}')
         label_list.append('Chance (33.333%)')
         label_list.append('Threshold (66.667%)')
-        fig4.legend(h, label_list,  loc='right', bbox_to_anchor=(0.9999, 0.5), fontsize=10)
+        fig4.legend(h, label_list,  loc='right', bbox_to_anchor=(0.9999, 0.5), fontsize=10)\
+        
+        if save_bool:
+            fig4.savefig('./figures/spectrum/3AFC/SR_ALL_' +  str(phase_trials) + '_trials_noiselist_'+ str(noise_list).replace(', ', '_') +'.png')
     plt.show()

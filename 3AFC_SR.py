@@ -415,11 +415,11 @@ def get_3AFC_RPO_separate_phase(RPO,
         if hearing_type == 'NH':    
             # get NH
             fname_i1 = glob.glob(data_dir + '*multi*i1*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
-            print(fname_i1)
+            # print(fname_i1)
             fname_i2 = glob.glob(data_dir + '*multi*i2*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
-            print(fname_i2)
+            # print(fname_i2)
             fname_s = glob.glob(data_dir + '*multi*_s_*' + RPO + '*_'+str(phase_trial) + '_2416CFs.mat')[0]
-            print(fname_s)
+            # print(fname_s)
             
             if 'filter' in fname_i1:
                 if metric == 'd':

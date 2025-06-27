@@ -8,6 +8,7 @@ import platform
 from scipy.stats import norm
 from scipy.integrate import quad
 import argparse
+import matplotlib as mpl
 
 # TO DO:
 # [X] NH with trials
@@ -15,7 +16,7 @@ import argparse
 # [X] add noise?
 # [X] EH with > 4.0 RPO
 # [X] add sigmoid function to d′ to percent correct 
-# [ ] how to fit sigmoid well when log scale
+# [X] how to fit sigmoid well when log scale
 
 freq_x_fft = np.load('./data/AB_MS_based_on_min_filtered_thresholdsfreq_x_fft.npy')
 fiber_id_selection = np.load('./data/AB_MS_based_on_min_filtered_thresholdsfiber_ID_list_FFT.npy')
@@ -642,9 +643,11 @@ if __name__ == "__main__":
 
     # various tasks
     run_single_noise = False
-    run_multiple_noise = True
+    run_multiple_noise = False
     load_created_output = False
+    load_created_output_filtered_only = True
     check_files_bool = False  # Set to True if you want to check which files need to be created
+    fix_fit = False
 
     hearing_type = args.type  # 'NH' or 'EH'
     true_axis = False  # Set to True if you want the x-axis to be the RPO, False if you want the x-axis to be the index of the RPO
@@ -677,6 +680,7 @@ if __name__ == "__main__":
         run_multiple_noise = True
         load_created_output = False
         check_files_bool = False
+        load_created_output_filtered_only = False
         if hearing_type == 'EH':
             print('Using EH hearing type')
             if CS_off:
@@ -804,7 +808,7 @@ if __name__ == "__main__":
                 fig2.savefig('./figures/spectrum/3AFC/3AFC_SR_' + hearing_type + '_RPO_' + str(RPO_list) + '_' + char_str + '_PC.png')
 
     if run_multiple_noise:
-        noise_list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]#[0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
+        noise_list = [0.0, 0.1, 0.2]#[0.0, 0.02, 0.04, 0.06, 0.08, 0.10]#[0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
         char_str += ' and noise'
     
         dprime_matrix, PC_matrix = run_dprime_multi_noise(RPO_list,
@@ -880,7 +884,6 @@ if __name__ == "__main__":
 
 
     if load_created_output:
-        import matplotlib as mpl
         fig4, axs = plt.subplots(3, 2, figsize=(11, 9.5), sharex=True, sharey=True)    
         axs = axs.flatten()     
         true_axis = False
@@ -931,14 +934,17 @@ if __name__ == "__main__":
                         avg = (PC_matrix[n, :, 0] + PC_matrix[n, :, 1])/2
                         y = fit_sigmoid(RPO_list, avg)
                         threshold = float(interpolate_threshold(RPO_list, y, threshold=66.667))
-                        ax.plot(y, label=f'threshold={round(threshold,2)}', color=colors[n])
+                        if threshold > 20:
+                            ax.plot(y, color=colors[n])
+                        else:
+                            ax.plot(y, label=f'threshold={round(threshold,1)}', color=colors[n])
                     else:
-                        ax.plot(fit_list[n,:], label=f'threshold={round(threshold,2)}', color=colors[n])
+                        ax.plot(fit_list[n,:], label=f'threshold={round(threshold,1)}', color=colors[n])
             if not true_axis:
                 ax.set_xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
-            h1 = ax.hlines(33.33333, -1, 20, colors='black', linestyles='dashed', label=str()) # 
+            # h1 = ax.hlines(33.33333, -1, 20, colors='black', linestyles='dashed', label=str()) # 
             h2 = ax.hlines((100+33.33333)/2, -1, 20, colors='black', linestyles='dotted', label=str()) 
-            # ax.set_ylim((30, 101))
+            ax.set_ylim((30, 101))
             ax.set_xlim((0, len(RPO_list)-1))
             ax.text(-0.01, 0.15, corner_labels[a], transform=ax.transAxes + trans,
                 fontsize=18, verticalalignment='top', fontfamily='Open Sans', color='black')
@@ -954,18 +960,156 @@ if __name__ == "__main__":
                 ax.set_title('Filtered', fontsize=18)
             # ax.set_ylabel('Percent Correct')
             # ax.set_xlabel('RPO')
-            ax.legend()
+            if ax != axs[1]:
+                ax.legend()
+            if ax == axs[0] and ax == axs[3] and ax == axs[5]:
+                ax.legend(loc='center left')
             a += 1
-        h, _ = axs[1].get_legend_handles_labels()
-        h.append(h1)
+        h, _ = axs[-1].get_legend_handles_labels()
+        # h.append(h1)
         h.append(h2)
         label_list = []
         for l in range(len(noise_list)):
             label_list.append(f'noise$_\\sigma$={noise_list[l]}')
-        label_list.append('Chance (33.333%)')
+        # label_list.append('Chance (33.333%)')
         label_list.append('Threshold (66.667%)')
         fig4.legend(h, label_list,  loc='right', bbox_to_anchor=(0.9999, 0.5), fontsize=10)\
         
         if save_bool:
             fig4.savefig('./figures/spectrum/3AFC/SR_ALL_' +  str(phase_trials) + '_trials_noiselist_'+ str(noise_list).replace(', ', '_') +'.png')
+
+    if load_created_output:
+        fig5, axs = plt.subplots(1, 3, figsize=(5, 12), sharex=True, sharey=True)    
+        axs = axs.flatten()     
+        true_axis = False
+        noise_list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
+        hearing_type_list = ['NH', 'NH', 'EH', 'EH', 'EH (CS off)', 'EH (CS off)']
+        char_str_list = ['no filter', 'filter (window=33)', 'no filter', 'filter (window=33)', 'no filter', 'filter (window=33)']
+        corner_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+        new_fit = True
+
+        # create colour map
+        n_lines = len(noise_list)
+        cmap = mpl.colormaps['plasma']
+        colors = cmap(np.linspace(0, 1, n_lines))
+
+        if true_axis:
+            plt.xlim((min(RPO_list), max(RPO_list)))
+        else:
+            plt.xlim((0, len(RPO_list)))
+
+        plt.subplots_adjust(wspace=0.05, hspace=0.1, left=0.08, right=0.81, top=0.95, bottom=0.1)  
+        import matplotlib.transforms as mtransforms # labeling axes
+        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig4.dpi_scale_trans)
+
+        a = 0
+        for ax, hearing_type, char_str in zip(axs, hearing_type_list, char_str_list):
+            char_str += ' and noise'
+            # Load the saved output
+            data = np.load('./output/3AFC_SR_' + hearing_type + '_' + str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.npy', allow_pickle=True).item()
+            threshold_list = data['threshold']
+            fit_list = data['fit']
+            RPO_list = data['RPO_list']
+            PC_matrix = data['PC_matrix']
+            noise_list = data['noise_list']
+            fit_list = data['fit']
+            if 20 in RPO_list:
+                RPO_list.remove(20)
+
+            for n, add_noise in enumerate(noise_list):
+                threshold = threshold_list[n]
+                if true_axis:
+                    ax.plot(RPO_list[:len(PC_matrix[n,:,0])], PC_matrix[n, :, 0], 'o', color=colors[n])
+                    ax.plot(RPO_list[:len(PC_matrix[n,:,1])], PC_matrix[n, :, 1], 'o', color=colors[n])
+                    ax.plot(RPO_list, fit_list[n,:], label=f'noise={add_noise}, threshold={round(threshold,2)}', color=colors[n])
+                else:
+                    ax.plot(PC_matrix[n, :, 0], 'o', color=colors[n])
+                    ax.plot(PC_matrix[n, :, 1], 'o', color=colors[n])
+                    if new_fit:
+                        avg = (PC_matrix[n, :, 0] + PC_matrix[n, :, 1])/2
+                        y = fit_sigmoid(RPO_list, avg)
+                        threshold = float(interpolate_threshold(RPO_list, y, threshold=66.667))
+                        if threshold > 20:
+                            ax.plot(y, color=colors[n])
+                        else:
+                            ax.plot(y, label=f'threshold={round(threshold,1)}', color=colors[n])
+                    else:
+                        ax.plot(fit_list[n,:], label=f'threshold={round(threshold,1)}', color=colors[n])
+            if not true_axis:
+                ax.set_xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
+            # h1 = ax.hlines(33.33333, -1, 20, colors='black', linestyles='dashed', label=str()) # 
+            h2 = ax.hlines((100+33.33333)/2, -1, 20, colors='black', linestyles='dotted', label=str()) 
+            ax.set_ylim((30, 101))
+            ax.set_xlim((0, len(RPO_list)-1))
+            ax.text(-0.01, 0.15, corner_labels[a], transform=ax.transAxes + trans,
+                fontsize=18, verticalalignment='top', fontfamily='Open Sans', color='black')
+
+            if ax == axs[0] or ax == axs[2] or ax == axs[4]:
+                ax.set_ylabel(hearing_type + '\n Percentage correct (%)', fontsize=16)
+                # r'\fontsize{30pt}{3em}\selectfont{}{Mean WRFv3.5 LHF\r}{\fontsize{18pt}{3em}\selectfont{}(September 16 - October 30, 2012)}'
+            if ax == axs[4] or ax == axs[5]:
+                ax.set_xlabel('Ripple density (RPO)')
+            if ax == axs[0]:
+                ax.set_title('Unfiltered', fontsize=18)
+            if ax == axs[1]:
+                ax.set_title('Filtered', fontsize=18)
+            # ax.set_ylabel('Percent Correct')
+            # ax.set_xlabel('RPO')
+            if ax != axs[1]:
+                ax.legend()
+            if ax == axs[0] and ax == axs[3] and ax == axs[5]:
+                ax.legend(loc='center left')
+            a += 1
+        h, _ = axs[-1].get_legend_handles_labels()
+        # h.append(h1)
+        h.append(h2)
+        label_list = []
+        for l in range(len(noise_list)):
+            label_list.append(f'noise$_\\sigma$={noise_list[l]}')
+        # label_list.append('Chance (33.333%)')
+        label_list.append('Threshold (66.667%)')
+        fig4.legend(h, label_list,  loc='right', bbox_to_anchor=(0.9999, 0.5), fontsize=10)\
+        
+        if save_bool:
+            fig5.savefig('./figures/spectrum/3AFC/SR_filtered_' +  str(phase_trials) + '_trials_noiselist_'+ str(noise_list).replace(', ', '_') +'.png')
+
+
+
+
+    if fix_fit:
+        # Load the saved output
+        data = np.load('./output/3AFC_SR_EH (CS off)_30_trials_filter_(window=33)_and_noiselist_[0.0_0.02_0.04_0.06_0.08_0.1].npy', allow_pickle=True).item()
+        threshold_list = data['threshold']
+        fit_list = data['fit']
+        RPO_list = data['RPO_list']
+        PC_matrix = data['PC_matrix']
+        noise_list = data['noise_list']
+        fit_list = data['fit']
+        if 20 in RPO_list:
+            RPO_list.remove(20)
+
+        # create colour map
+        n_lines = len(noise_list)
+        cmap = mpl.colormaps['plasma']
+        colors = cmap(np.linspace(0, 1, n_lines))
+
+        for n, add_noise in enumerate(noise_list):
+            threshold = threshold_list[n]
+            plt.plot(PC_matrix[n, :, 0], 'o', color=colors[n])
+            plt.plot(PC_matrix[n, :, 1], 'o', color=colors[n])
+            avg = (PC_matrix[n, :, 0] + PC_matrix[n, :, 1])/2
+            y = fit_sigmoid(RPO_list, avg)
+            # print('summed squared error = ', np.sum((y - avg)**2))
+            threshold = float(interpolate_threshold(RPO_list, y, threshold=66.667))
+            if threshold > 20:
+                plt.plot(y, color=colors[n])
+            else:
+                plt.plot(y, label=f'threshold={round(threshold,1)}', color=colors[n])
+            plt.xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
+
+
+
     plt.show()
+
+
+

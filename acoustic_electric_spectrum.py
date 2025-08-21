@@ -89,6 +89,12 @@ def plot_acoustic_electric_fig(name_list, use_preemp, phase='1'):
     fig1.set_size_inches(17,5)
     plt.subplots_adjust(left=0.038, right=0.99, wspace=0.112, top=0.9)
     iterator = 0
+    upper_lim = 1.005
+    edges = [306, 442, 578, 646, 782, 918, 1054, 1250, 1529, 1801, 2141, 2549, 3025, 3568, 4248, 8054] 
+    for ii in range(int(len(name_list)/2)):
+        ax1[0,ii].vlines(edges, 0, upper_lim, color='lightgray')
+        ax1[1,ii].vlines(edges, 0, upper_lim, color='lightgray')
+
     for i_n, name in enumerate(name_list):
         previous1 = 0
         previous2 = 0   
@@ -135,13 +141,13 @@ def plot_acoustic_electric_fig(name_list, use_preemp, phase='1'):
         ax1[0,iterator].plot(frequency, np.squeeze(outline), color = color, label=label)
         ax1[0,iterator].set_xscale('log', base=2)
         ax1[0,iterator].set_xlim((200, 8700))
-        ax1[0,iterator].set_ylim((0, 1))
+        ax1[0,iterator].set_ylim((0, upper_lim))
         ax1[0,iterator].set_xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
-        edges = [306, 442, 578, 646, 782, 918, 1054, 1250, 1529, 1801, 2141, 2549, 3025, 3568, 4248, 8054] #[340, 476, 612, 680, 816, 952, 1088, 1292, 1564, 1836, 2176, 2584, 3060, 3604, 4284, 8024]
+        
         x=3 # check edges
-        for edge in edges:
-            # print(edge)
-            ax1[0,iterator].vlines(edge, 0, 1, color='lightgray')
+        # for edge in edges:
+        #     # print(edge)
+        #     ax1[0,iterator].vlines(edge, 0, 1, color='lightgray')
 
         if name[-3:] == 'mp3': # STRIPES
             RPO = re.search('_(.*)_', name).group(1)
@@ -178,31 +184,140 @@ def plot_acoustic_electric_fig(name_list, use_preemp, phase='1'):
                 previous2 = bin
             ax1[1,iterator].set_xscale('log', base=2)
             ax1[1,iterator].set_xlim((200, 8700))
-            ax1[1,iterator].set_ylim((0, 1))
+            ax1[1,iterator].set_ylim((0, upper_lim))
             ax1[1,iterator].set_xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
             ax1[1,iterator].set_xlabel('Frequency [Hz]')
             # for edge in edges:
-            ax1[1,iterator].vlines(edges, 0, 1, color='lightgray')
+            # ax1[1,iterator].vlines(edges, 0, 1, color='lightgray')
             if iterator == 3:
                 ax1[1,iterator].legend(loc='upper right', fontsize=fontsize)
 
         #add rectangle to plot
-        ax1[0,iterator].add_patch(Rectangle((0,0), edges[0],1,
+        ax1[0,iterator].add_patch(Rectangle((0,0), edges[0],upper_lim,
                         edgecolor = 'grey',
                         facecolor = 'grey',
                         fill=True,
                         alpha=0.25))
-        ax1[0,iterator].add_patch(Rectangle((edges[-1],0), edges[-1]+2000,1,
+        ax1[0,iterator].add_patch(Rectangle((edges[-1],0), edges[-1]+2000,upper_lim,
                         edgecolor = 'grey',
                         facecolor = 'grey',
                         fill=True,
                         alpha=0.25))
-        ax1[1,iterator].add_patch(Rectangle((0,0), edges[0],1,
+        ax1[1,iterator].add_patch(Rectangle((0,0), edges[0],upper_lim,
                     edgecolor = 'grey',
                     facecolor = 'grey',
                     fill=True,
                     alpha=0.25))
-        ax1[1,iterator].add_patch(Rectangle((edges[-1],0), edges[-1]+2000,1,
+        ax1[1,iterator].add_patch(Rectangle((edges[-1],0), edges[-1]+2000,upper_lim,
+                    edgecolor = 'grey',
+                    facecolor = 'grey',
+                    fill=True,
+                    alpha=0.25))    
+
+    ax1[0,0].set_ylabel('Acoustic', fontsize=fontsize)
+    ax1[1,0].set_ylabel('Electric', fontsize=fontsize)
+    return fig1, pre_str
+
+
+def plot_acoustic_electric_fig2(name_list, use_preemp, phase='1'):
+    fig1 , ax1 = plt.subplots(2, int(len(name_list)/2))
+    fig1.set_size_inches(17,8)
+    plt.subplots_adjust(left=0.038, right=0.99, wspace=0.112, top=0.9)
+    iterator = 0
+    upper_lim = 1.4
+    edges = [306, 442, 578, 646, 782, 918, 1054, 1250, 1529, 1801, 2141, 2549, 3025, 3568, 4248, 8054] 
+    
+    for ii in range(int(len(name_list)/2)):
+        ax1[0,ii].vlines(edges, 0, upper_lim, color='lightgray')
+        ax1[1,ii].vlines(edges, 0, upper_lim, color='lightgray')
+
+    for i_n, name in enumerate(name_list):
+        previous1 = 0
+        previous2 = 0   
+
+        sound_name = sound_dir + name+ phase + '.wav'
+        if  name[0] == 's':
+            color = color_s
+            label = 'standard'
+        elif name[0] == 'i':
+            color = color_i
+            label = 'inverted'
+
+    # Spectral ripple
+        RPO_re = re.search('_(.*)_', name)
+        RPO = RPO_re.group(1)
+        while RPO[-2:] == '00':
+            RPO = RPO[:-2]
+        ax1[0,iterator].set_title(RPO + ' RPO', fontsize=fontsize )
+        width = '20'
+
+        
+
+        label_acoustic = label + ' acoustic signal (' + RPO + ' RPO)'
+        label_electric = label + ' electric signal (' + RPO + ' RPO)'
+
+        if i_n !=0 and i_n%2 == 0:
+            iterator += 1
+        print(sound_name)
+        outline, frequency, pre_str = get_acoustic_spectrum(sound_name, use_preemp)
+        normalized_bins = get_electric_spectrum(sound_name) 
+        # ax1[0,iterator].vlines(edges, 0, upper_lim, color='lightgray')
+        ax1[0,iterator].plot(frequency, np.squeeze(outline), color = color, label=label_acoustic)
+        ax1[0,iterator].set_xscale('log', base=2)
+        ax1[0,iterator].set_xlim((200, 8700))
+        ax1[0,iterator].set_ylim((0, upper_lim))
+        ax1[0,iterator].set_xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
+        ax1[0,iterator].legend(loc='upper right', fontsize=fontsize)
+         # for edge in edges:
+        #     # print(edge)
+        #     ax1[0,iterator].vlines(edge, 0, upper_lim, color='lightgray')
+
+
+
+        # ax1[1,iterator].vlines(edges, 0, upper_lim, color='lightgray')
+        for i, bin in enumerate(normalized_bins): 
+            if  name[:2] == 's_' or name[8] == 'd' or width != '20':
+                if i == 1:
+                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_s, linewidth= 3, label=label_electric) # 
+                else:
+                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_s, linewidth= 3, label='') # 
+                ax1[1, iterator].vlines(edges[i], previous1, bin, colors=color_s, linewidth= 3, label='_nolegend_') # 
+
+                previous1 = bin 
+            elif  name[0] == 'i'or name[8] == 'u' or 'width_20' in name: # 
+                if i == 1:
+                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_i, linewidth= 3, label=label_electric) # 
+                else:
+                    ax1[1, iterator].hlines(bin, edges[i], edges[i+1], colors=color_i, linewidth= 3, label='') 
+                ax1[1, iterator].vlines(edges[i], previous2, bin, colors=color_i, linewidth= 3, label='_nolegend_') # 
+                previous2 = bin
+        ax1[1,iterator].set_xscale('log', base=2)
+        ax1[1,iterator].set_xlim((200, 8700))
+        ax1[1,iterator].set_ylim((0, upper_lim))
+        ax1[1,iterator].set_xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
+        ax1[1,iterator].set_xlabel('Frequency [Hz]')
+        # for edge in edges:
+
+        # if iterator == 3:
+        ax1[1,iterator].legend(loc='upper right', fontsize=fontsize)
+
+        #add rectangle to plot
+        ax1[0,iterator].add_patch(Rectangle((0,0), edges[0],upper_lim,
+                        edgecolor = 'grey',
+                        facecolor = 'grey',
+                        fill=True,
+                        alpha=0.25))
+        ax1[0,iterator].add_patch(Rectangle((edges[-1],0), edges[-1]+2000,upper_lim,
+                        edgecolor = 'grey',
+                        facecolor = 'grey',
+                        fill=True,
+                        alpha=0.25))
+        ax1[1,iterator].add_patch(Rectangle((0,0), edges[0],upper_lim,
+                    edgecolor = 'grey',
+                    facecolor = 'grey',
+                    fill=True,
+                    alpha=0.25))
+        ax1[1,iterator].add_patch(Rectangle((edges[-1],0), edges[-1]+2000,upper_lim,
                     edgecolor = 'grey',
                     facecolor = 'grey',
                     fill=True,
@@ -352,16 +467,23 @@ if __name__ == '__main__':
         # fontsize = 14.5
 
         plot_electric = True
+        plot_electric2 = False # changing figure slightly
         plot_virtual = False
 
         if plot_electric:
             get_virtual_bins = False
             name_list = ['s_0.500_', 'i1_0.500_', 's_1.414_', 'i1_1.414_', 's_2.000_', 'i1_2.000_', 's_4.000_', 'i1_4.000_']
-            for phase in range(7, 30):
+            for phase in [1]: #range(7, 30):
                 phase = str(phase) # '1' / '2' / '3'    
                 fig1, pre_str = plot_acoustic_electric_fig(name_list, use_preemp, phase)
                 fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipples'+color_i + color_s + pre_str +'306_8054Hz_phase'+ phase +'.png')
 
+        if plot_electric2:
+            name_list = ['s_0.500_', 'i1_0.500_', 's_1.414_', 'i1_1.414_', 's_2.000_', 'i1_2.000_', 's_4.000_', 'i1_4.000_']
+            phase = '1'
+            fig1, pre_str = plot_acoustic_electric_fig2(name_list, use_preemp, phase)
+            fig1.savefig('./figures/spectrum/AcousticAndElectricSpectralRipplesRaisedYLimMoreLegend'+color_i + color_s + pre_str +'306_8054Hz_phase'+ phase +'.png')
+        
         if plot_virtual:
             name_list = ['s_2.828_', 'i1_2.828_'] 
             fig2, pre_str = plot_acoustic_electric_virtual_fig(name_list, use_preemp)

@@ -18,7 +18,7 @@ ripple_to_plot = '1.000'
 for phase_shift in range(1,10):
 
     file_paths = {
-    # "i": "i_"+ ripple_to_plot + "_" + str(phase_shift) + ".wav",
+    "i": "i_"+ ripple_to_plot + "_" + str(phase_shift) + ".wav",
     "i1" : "i1_"+ ripple_to_plot + "_" + str(phase_shift) + ".wav",
     "i2" : "i2_"+ ripple_to_plot + "_" + str(phase_shift) + ".wav",
     "s" : "s_"+ ripple_to_plot + "_" + str(phase_shift) + ".wav",
@@ -51,7 +51,7 @@ for phase_shift in range(1,10):
         }
 
     # Plot magnitude spectra
-    plt.figure(num=1, figsize=(12, 6))
+    plt.figure(num=phase_shift, figsize=(12, 6))
     for label, data in fft_data.items():
         plt.plot(data["freqs"], 20 * np.log10(data["magnitude"] + 1e-12), label=data["label"])
     plt.title("Magnitude Spectrum")

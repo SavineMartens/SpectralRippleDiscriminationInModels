@@ -332,8 +332,9 @@ if __name__ == "__main__":
     # pick figure
     double_spectrum_bool = False # show i1 AND s in one fig per RPO
     single_spectrum_bool = False
-    double_spectrum_one_fig_bool = True # show i1 AND s in all RPO in one fig
-    versus_alpha = True # 2.828 CS vs CS off
+    double_spectrum_one_fig_bool = False # show i1 AND s in all RPO in one fig
+    versus_alpha = False # 2.828 CS vs CS off
+    plot_frequency_allocation = True
     critical_bands_fig = False
     octave_spaced = True 
     if octave_spaced:
@@ -531,4 +532,22 @@ if __name__ == "__main__":
                  filter_bool=filter_bool, vlines=vlines_eh, v_ellips=v_ellips, octave_spaced=octave_spaced)
         plt.suptitle('Ripple density: ' + RPO + ' RPO')
         fig.savefig('./figures/spectrum/CSvsCSoff_' + filter_str + '_full_labels_' + filter_type + 'filteredNewFreqAxis_' + v_ellips_str + RPO + 'RPO'+ str(dB)+'dB_111.6dB'+ color_s + color_i + octave_str + '.png')
+    
+
+    if plot_frequency_allocation:
+        matfile = './data/Fidelity120 HC3A MS All Morphologies 18us CF 0.5-3.5 mm.mat'
+        _, _, _, _, _, Ln, Le, _, _, _ = load_mat_virtual_all_thresholds(matfile, nerve_model_type=3, state=1, array_type =2)
+        fig = plt.figure()
+        plt.plot(Ln[fiber_id_selection], freq_x_fft, 'k.', markersize=0.5)
+        plt.vlines(Le, min(freq_x_fft)-10*np.ones(len(Le)), max(freq_x_fft)+400*np.ones(len(Le)), color='orange')
+        plt.hlines(edges, min(Ln[fiber_id_selection])-0.1*np.ones(len(Le)), max(Ln[fiber_id_selection])+0.1*np.ones(len(Le)))
+        plt.xlabel('Position along basilar membrane [mm]')
+        plt.ylabel('Frequency [Hz]')
+        plt.xlim((min(Ln[fiber_id_selection])-0.1, max(Ln[fiber_id_selection])+0.1))
+        plt.ylim((min(freq_x_fft)-10, max(edges)+400))
+        plt.yscale('log', base=2)
+        plt.yticks([x_start, 500, 1000, 2000, 4000, 8000], labels=[str(int(x_start)), '500', '1000', '2000', '4000', '8000'])
+        fig.savefig('./figures/NewFreqLearntAxis.png')
+    
+    
     plt.show()

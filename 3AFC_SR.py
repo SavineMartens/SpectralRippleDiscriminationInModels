@@ -87,6 +87,12 @@ def interpolate_threshold(RPO_list, y, threshold=66.667):
     return interpolated_RPO
 
 def pc_m_afc(d_prime, m=3):
+    # sources: 
+    # - MacMillan 2005, "Detection Theory: A User's Guide" eq (12.2) page 303 Chapter components of Sensitivity
+    # - Green, D. M., & Swets, J. A. (1966). Signal detection theory and psychophysics. eq (3.10) page 69
+    # https://pdf.sciencedirectassets.com/272579/1-s2.0-S0022249612X00038/1-s2.0-S0022249612000260/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEEAaCXVzLWVhc3QtMSJGMEQCIArnw%2FMUSO2Pbo74t9B67V5DIybii9DqCD%2Fvr4nUlETMAiBg5qiIpZSXDcE5JoaeYv56%2F5n1Uh4hBiHh13bBnvvLUSqzBQhYEAUaDDA1OTAwMzU0Njg2NSIMqNOol8ouF2Qb1W1wKpAFPw3y0CmKRaRtmvSshds6aSwyUnaQiUcADUdKD7wC3gPrL8ALdDf1xDIoQawmqG2CZjUkGU1EcjhNPq9l%2FOwA4dRNGpQsR8UZvLtoDZxlQro%2Fp%2FoAOSP4gn%2F4FRn5HuD09EMaH37SsR8XJ6g8LbSbXJznSETs%2F%2FsTJPoFFL4faRSid47A0v%2Foye1GOVRjpNKoOWMDHIiDfXQrGVw12QShS4kMkmSjX1aPx1KWvGsS12oy8yl%2BUVW5%2FQy%2BxT5YQ2bjthHznWHU8LHK9Z4YWPdOnPUBwKm0RWfsxowwD%2BlnH2GDaGRqr7NfVVZ70x4OsVq2M4M0Oyxwb8dq2xf2ElUFp%2BPhwHLnw5A8XeicQ1TQlUQ4jmSoiL5Is7CfeYwzUuZGRd78HUpwIMFsR7wPvQ742hIkv1ty7kqGAH7eMEGo95Zq1%2BLqcu0n1f%2BH3dAU%2Fs5SCAXgOLVkAy4GIJmL2HGePrlXyi9B9xKNH1bDONgWVCrUWxrFfxNc%2FNO5xjtTfbAvQprzeoXFa7642MmcZB82r%2B8alr4wW8Liow5Jagnv%2BaDsxn27t8xDoAinTPn4Kxy%2B%2FjlkPgtqTe5CzuNLf%2FzwDox%2BmLtYG%2BFHsMBJLoQVYH2YY1JwsI%2Br9Swrz6dbx08fBJBTeVXVoEyLDCvBUY8T8JDjpxEGcUGVKjK%2Bpxru7t7Vp8e6TsyY3%2BleanjFr7f%2BituGanT1MxjNvJdLCE%2FW9IhjbV1FlvHrgJOQQqspSoQ0I3JFfxVo%2F1IeVnHCANsBYkToOjGuOYC37EE6xWZXbLsfop1r3nCCfIfEX6XuNwrs3CzyPmoc8lD7IP76w4afiK%2F%2F%2FFXK7C1HoE%2BlPsZ6zKfePcQ27cbips3KzUr2F5sw86TdwwY6sgHC8tVn5ct1822XnZVrKlXocM7RDoXEVVIWFCASv2FhASxyzJC9PK5YPvabNj50sb0wJC2QUE%2BdfI6OmMtiV%2BRgm9rfc%2BxnWvlwnRRdLpa07oWcqqkGusqlay2v2k%2F44FTjOd6WWqLvtBu6Sv2pljtlpsAJLTvLYhAt2i45%2B1DU5mRHbQAhl6WE3Mp510YaFFqn3sPInVlUDqrbt3sVDCkaY%2FvkpeqToeZrTswTcLYAK0zW&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20250716T075815Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAQ3PHCVTYVARZAIHO%2F20250716%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=f5efb9e7a736609873617abe0284d530feb1f8034ed97db2efca213c3453f350&hash=cd3fb720dbb7b4395c00690f4b89a41324093589da370f96e1868b558c5e6162&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S0022249612000260&tid=spdf-77301988-6632-4a5a-aa2b-984e5d6b56ee&sid=7b6199ab1373374fc5490a4715dea64d7651gxrqb&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&rh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=140a5f5203020451505104&rr=95fff410b9a10bc5&cc=nl 
+    # eq (5)
+
     # within integration:
     to_integrate = lambda x: norm.cdf(x)**(m - 1) * norm.pdf(x - d_prime)
     # Integrate from -inf to inf
@@ -244,8 +250,13 @@ def load_trials_from_train(fname,
 
 def compute_d_prime_2matrices_trials_freq(standard_matrix, inverted_matrix):
     """
+    sources: 
+    - https://eshedmargalit.com/dprime_calculator/
+    - MacMillan 2005, "Detection Theory: A User's Guide" eq (12.2) page 303 Chapter components of Sensitivity
+    - Green, D. M., & Swets, J. A. (1966). Signal detection theory and psychophysics. eq (3.10) page 69
+
     Compute d-prime across frequency channels.
-    
+
     Parameters:
     - standard_matrix: np.ndarray of shape (n_trials, n_freqs)
     - neurograms_stim2: np.ndarray of shape (n_trials, n_freqs)
@@ -255,7 +266,7 @@ def compute_d_prime_2matrices_trials_freq(standard_matrix, inverted_matrix):
     """
     mu1 = np.mean(standard_matrix, axis=0)
     mu2 = np.mean(inverted_matrix, axis=0)
-    
+       
     var1 = np.var(standard_matrix, axis=0, ddof=1)
     var2 = np.var(inverted_matrix, axis=0, ddof=1)
     
@@ -280,7 +291,8 @@ def compute_d_prime_3matrices(standard_matrix, inverted1_matrix, inverted2_matri
         mean_diff = np.mean(a, axis=0) - np.mean(b, axis=0)
         var_a = np.var(a, axis=0, ddof=1)
         var_b = np.var(b, axis=0, ddof=1)
-        pooled_std = np.sqrt(0.5 * (var_a + var_b))
+        pooled_std = np.sqrt(0.5 * (var_a + var_b)) # following Simpson
+        # pooled_std = np.sqrt((var_a**2 + var_b**2)) # following MacMillan
         d = mean_diff / pooled_std
         d[np.isnan(d)] = 0  # handle divide-by-zero
         if per_frequency:
@@ -411,7 +423,7 @@ def get_3AFC_RPO_separate_phase(RPO,
     phase_trial = 1 
     while successful_trials <= phase_trials and phase_trial <= 30:
     # for phase_trial in range(1,phase_trials+1):
-        # print(f'Processing RPO {RPO} - {hearing_type} at phase {phase_trial}')
+        print(f'Processing RPO {RPO} - {hearing_type} at phase {phase_trial}')
         # try:
         if hearing_type == 'NH':    
             # get NH
@@ -530,9 +542,9 @@ def get_3AFC_RPO_separate_phase(RPO,
         plt.xticks([min(freq_x_fft), 500, 1000, 2000, 4000, 8000], labels=[str(int(min(freq_x_fft))), '500', '1000', '2000', '4000', '8000'])
         plt.legend()
         plt.ylabel(metric_str)
+    x=3
     
-    
-    return np.mean(metric_matrix_i1), np.mean(metric_matrix_i2), np.mean(metric_matrix_i)
+    return metric_matrix_i1, metric_matrix_i2, metric_matrix_i #np.mean(metric_matrix_i1), np.mean(metric_matrix_i2), np.mean(metric_matrix_i)
 
 
 def run_dprime_multi_noise(RPO, 
@@ -547,7 +559,8 @@ def run_dprime_multi_noise(RPO,
 
     dprime_matrix = np.zeros((len(noise_list), len(RPO_list), 3))  # Columns for i1, i2, and i
     PC_matrix = np.zeros((len(noise_list), len(RPO_list), 3))  # Columns for i1, i2, and i
-    
+    PC_separate_phase = np.zeros((len(noise_list), len(RPO_list),30 , 3))
+
     for n, add_noise in enumerate(noise_list):
         for r, RPO in enumerate(RPO_list):
             print(f'Running for RPO: {RPO}, Noise: {add_noise}')
@@ -560,21 +573,27 @@ def run_dprime_multi_noise(RPO,
                                                         window_size=window_size,
                                                         add_noise=add_noise,
                                                         data_dir=data_dir)
-            dprime_matrix[n, r, 0] = d_i1
-            dprime_matrix[n, r, 1] = d_i2
-            dprime_matrix[n, r, 2] = d_i
+            dprime_matrix[n, r, 0] = np.mean(d_i1)
+            dprime_matrix[n, r, 1] = np.mean(d_i2)
+            dprime_matrix[n, r, 2] = np.mean(d_i)
             # Convert d' to percent correct
-            PC_matrix[n, r, 0] = pc_m_afc(d_i1) # dprime_lookup_table(d_i1)
-            PC_matrix[n, r, 1] = pc_m_afc(d_i2) # dprime_lookup_table(d_i2)
-            PC_matrix[n, r, 2] = pc_m_afc(d_i) # dprime_lookup_table(d_i)
+            PC_matrix[n, r, 0] = pc_m_afc(np.mean(d_i1)) # dprime_lookup_table(d_i1)
+            PC_matrix[n, r, 1] = pc_m_afc(np.mean(d_i2)) # dprime_lookup_table(d_i2)
+            PC_matrix[n, r, 2] = pc_m_afc(np.mean(d_i)) # dprime_lookup_table(d_i)
 
+
+            for phase in range(phase_trials):
+                PC_separate_phase[n, r, phase, 0] = pc_m_afc(np.mean(d_i1[phase,:])) 
+                PC_separate_phase[n, r, phase, 1] = pc_m_afc(np.mean(d_i2[phase,:])) 
+                PC_separate_phase[n, r, phase, 2] = pc_m_afc(np.mean(d_i[phase,:])) 
+            x=3
             # if PC_matrix[n, r, 0]< 10:
             #     breakpoint()
             # if PC_matrix[n, r, 1]< 10:
             #     breakpoint()
             x=3
 
-    return dprime_matrix, PC_matrix
+    return dprime_matrix, PC_matrix, PC_separate_phase
 
 
 def check_files(hearing_type,
@@ -632,20 +651,22 @@ def check_files(hearing_type,
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-trials', type=int, help="Number of phase trials.", default=30)
-    parser.add_argument('-type', help='NH or EH', default='NH')
+    parser.add_argument('-type', help='NH or EH', default='EH')
     parser.add_argument('-filter', action='store_true')
     parser.add_argument('-CS_off', action='store_true', help='Current steering off')
     args = parser.parse_args()
 
     # if not on cluster:
-    # args.filter = True
-    # args.CS_off = False
+    args.filter = True
+    # args.CS_off = True
 
     # various tasks
     run_single_noise = False
     run_multiple_noise = False
     load_created_output = False
-    load_created_output_filtered_only = True
+    load_created_output_filtered_only = False
+    load_created_output_filtered_only_wo_noise = False
+    load_created_output_with_phase = True
     check_files_bool = False  # Set to True if you want to check which files need to be created
     fix_fit = False
 
@@ -808,17 +829,17 @@ if __name__ == "__main__":
                 fig2.savefig('./figures/spectrum/3AFC/3AFC_SR_' + hearing_type + '_RPO_' + str(RPO_list) + '_' + char_str + '_PC.png')
 
     if run_multiple_noise:
-        noise_list = [0.0, 0.1, 0.2]#[0.0, 0.02, 0.04, 0.06, 0.08, 0.10]#[0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
+        noise_list = [0.0]#[0.0, 0.02, 0.04, 0.06, 0.08, 0.10]#[0.0, 0.01, 0.02, 0.03, 0.04, 0.05]
         char_str += ' and noise'
     
-        dprime_matrix, PC_matrix = run_dprime_multi_noise(RPO_list,
-                                                            hearing_type, 
-                                                            noise_list, 
-                                                            filter_bool=filter_bool, 
-                                                            filter_type=filter_type,
-                                                            phase_trials=phase_trials, 
-                                                            window_size=window_size,
-                                                            data_dir=data_dir)
+        dprime_matrix, PC_matrix, PC_separate_phase = run_dprime_multi_noise(RPO_list,
+                                                                            hearing_type, 
+                                                                            noise_list, 
+                                                                            filter_bool=filter_bool, 
+                                                                            filter_type=filter_type,
+                                                                            phase_trials=phase_trials, 
+                                                                            window_size=window_size,
+                                                                            data_dir=data_dir)
         fig3 = plt.figure(figsize=(10, 5))
         
         true_axis = False
@@ -867,20 +888,21 @@ if __name__ == "__main__":
             plt.xticks(range(len(RPO_list[:-1])), labels=[str((rpo)) for rpo in RPO_list[:-1]], rotation=45)
 
         if save_bool:
-                fig3.savefig('./figures/spectrum/3AFC/SR_' + hearing_type + '_' +  str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.png')
-                dict_save = {}
-                dict_save['dprime_matrix'] = dprime_matrix
-                dict_save['PC_matrix'] = PC_matrix
-                dict_save['RPO_list'] = RPO_list
-                dict_save['noise_list'] = noise_list
-                dict_save['hearing_type'] = hearing_type
-                dict_save['phase_trials'] = phase_trials
-                dict_save['filter_bool'] = filter_bool
-                dict_save['window_size'] = window_size
-                dict_save['filter_type'] = filter_type
-                dict_save['fit'] = fit_list
-                dict_save['threshold'] = threshold_list
-                np.save('./output/3AFC_SR_' + hearing_type + '_' + str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.npy', dict_save, allow_pickle=True)
+            fig3.savefig('./figures/spectrum/3AFC/SR_' + hearing_type + '_' +  str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.png')
+            dict_save = {}
+            dict_save['dprime_matrix'] = dprime_matrix
+            dict_save['PC_matrix'] = PC_matrix
+            dict_save['PC_separate_phase'] = PC_separate_phase
+            dict_save['RPO_list'] = RPO_list
+            dict_save['noise_list'] = noise_list
+            dict_save['hearing_type'] = hearing_type
+            dict_save['phase_trials'] = phase_trials
+            dict_save['filter_bool'] = filter_bool
+            dict_save['window_size'] = window_size
+            dict_save['filter_type'] = filter_type
+            dict_save['fit'] = fit_list
+            dict_save['threshold'] = threshold_list
+            np.save('./output/3AFC_SR_' + hearing_type + '_' + str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.npy', dict_save, allow_pickle=True)
 
 
     if load_created_output:
@@ -978,13 +1000,13 @@ if __name__ == "__main__":
         if save_bool:
             fig4.savefig('./figures/spectrum/3AFC/SR_ALL_' +  str(phase_trials) + '_trials_noiselist_'+ str(noise_list).replace(', ', '_') +'.png')
 
-    if load_created_output:
-        fig5, axs = plt.subplots(1, 3, figsize=(5, 12), sharex=True, sharey=True)    
+    if load_created_output_filtered_only:
+        fig5, axs = plt.subplots(1, 3, figsize=(13, 4), sharex=True, sharey=True)    
         axs = axs.flatten()     
         true_axis = False
-        noise_list = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10]
-        hearing_type_list = ['NH', 'NH', 'EH', 'EH', 'EH (CS off)', 'EH (CS off)']
-        char_str_list = ['no filter', 'filter (window=33)', 'no filter', 'filter (window=33)', 'no filter', 'filter (window=33)']
+        noise_list = [0.0, 0.1, 0.2]
+        hearing_type_list = ['NH', 'EH', 'EH (CS off)']
+        char_str = 'filter (window=33) and noise'
         corner_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
         new_fit = True
 
@@ -993,18 +1015,17 @@ if __name__ == "__main__":
         cmap = mpl.colormaps['plasma']
         colors = cmap(np.linspace(0, 1, n_lines))
 
-        if true_axis:
-            plt.xlim((min(RPO_list), max(RPO_list)))
-        else:
-            plt.xlim((0, len(RPO_list)))
+        # if true_axis:
+        #     plt.xlim((min(RPO_list), max(RPO_list)))
+        # else:
+        #     plt.xlim((0, len(RPO_list)))
 
-        plt.subplots_adjust(wspace=0.05, hspace=0.1, left=0.08, right=0.81, top=0.95, bottom=0.1)  
+        plt.subplots_adjust(wspace=0.11, left=0.055, right=0.985, bottom=0.23,  top=0.93, hspace=0.1) # hspace=0.1) # wspace=0.05, 
         import matplotlib.transforms as mtransforms # labeling axes
-        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig4.dpi_scale_trans)
+        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig5.dpi_scale_trans)
 
         a = 0
-        for ax, hearing_type, char_str in zip(axs, hearing_type_list, char_str_list):
-            char_str += ' and noise'
+        for ax, hearing_type in zip(axs, hearing_type_list):
             # Load the saved output
             data = np.load('./output/3AFC_SR_' + hearing_type + '_' + str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.npy', allow_pickle=True).item()
             threshold_list = data['threshold']
@@ -1030,46 +1051,27 @@ if __name__ == "__main__":
                         y = fit_sigmoid(RPO_list, avg)
                         threshold = float(interpolate_threshold(RPO_list, y, threshold=66.667))
                         if threshold > 20:
-                            ax.plot(y, color=colors[n])
+                            ax.plot(y, label=f'N$_\\sigma$={noise_list[n]}', color=colors[n])
                         else:
-                            ax.plot(y, label=f'threshold={round(threshold,1)}', color=colors[n])
+                            ax.plot(y, label=f'N$_\\sigma$={noise_list[n]}, T={round(threshold,1)}', color=colors[n])
                     else:
                         ax.plot(fit_list[n,:], label=f'threshold={round(threshold,1)}', color=colors[n])
             if not true_axis:
                 ax.set_xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
-            # h1 = ax.hlines(33.33333, -1, 20, colors='black', linestyles='dashed', label=str()) # 
             h2 = ax.hlines((100+33.33333)/2, -1, 20, colors='black', linestyles='dotted', label=str()) 
             ax.set_ylim((30, 101))
             ax.set_xlim((0, len(RPO_list)-1))
-            ax.text(-0.01, 0.15, corner_labels[a], transform=ax.transAxes + trans,
+            ax.text(-0.01, 0.12, corner_labels[a], transform=ax.transAxes + trans,
                 fontsize=18, verticalalignment='top', fontfamily='Open Sans', color='black')
-
-            if ax == axs[0] or ax == axs[2] or ax == axs[4]:
-                ax.set_ylabel(hearing_type + '\n Percentage correct (%)', fontsize=16)
-                # r'\fontsize{30pt}{3em}\selectfont{}{Mean WRFv3.5 LHF\r}{\fontsize{18pt}{3em}\selectfont{}(September 16 - October 30, 2012)}'
-            if ax == axs[4] or ax == axs[5]:
-                ax.set_xlabel('Ripple density (RPO)')
+            ax.set_title(hearing_type, fontsize=18)
             if ax == axs[0]:
-                ax.set_title('Unfiltered', fontsize=18)
-            if ax == axs[1]:
-                ax.set_title('Filtered', fontsize=18)
-            # ax.set_ylabel('Percent Correct')
-            # ax.set_xlabel('RPO')
-            if ax != axs[1]:
-                ax.legend()
-            if ax == axs[0] and ax == axs[3] and ax == axs[5]:
-                ax.legend(loc='center left')
-            a += 1
-        h, _ = axs[-1].get_legend_handles_labels()
-        # h.append(h1)
-        h.append(h2)
-        label_list = []
-        for l in range(len(noise_list)):
-            label_list.append(f'noise$_\\sigma$={noise_list[l]}')
-        # label_list.append('Chance (33.333%)')
-        label_list.append('Threshold (66.667%)')
-        fig4.legend(h, label_list,  loc='right', bbox_to_anchor=(0.9999, 0.5), fontsize=10)\
-        
+                ax.set_ylabel('Percentage correct (%)', fontsize=16)
+            
+            ax.legend(loc=(0.02,0.35))
+            # if ax == axs[0] and ax == axs[3] and ax == axs[5]:
+                # ax.legend(loc='center left')
+            a += 1        
+        fig5.text(0.5, 0.05, 'Ripple density (RPO)', ha='center', fontsize=18)
         if save_bool:
             fig5.savefig('./figures/spectrum/3AFC/SR_filtered_' +  str(phase_trials) + '_trials_noiselist_'+ str(noise_list).replace(', ', '_') +'.png')
 
@@ -1106,6 +1108,121 @@ if __name__ == "__main__":
             else:
                 plt.plot(y, label=f'threshold={round(threshold,1)}', color=colors[n])
             plt.xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
+
+
+
+    if load_created_output_filtered_only_wo_noise:
+        fig6 = plt.figure(figsize=(8, 6))
+        noise_list = [0.0, 0.1, 0.2]
+        hearing_type_list = ['NH', 'EH', 'EH (CS off)']
+        char_str = 'filter (window=33) and noise'
+        corner_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+        # create colour map
+        n_lines = len(noise_list)
+        cmap = mpl.colormaps['plasma']
+        colors = cmap(np.linspace(0, 1, n_lines))
+        plt.subplots_adjust(wspace=0.11, left=0.1, right=0.97, bottom=0.15,  top=0.93, hspace=0.1)
+        import matplotlib.transforms as mtransforms # labeling axes
+        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig6.dpi_scale_trans)
+        c=0
+        n=0
+        for hearing_type in hearing_type_list:
+            # Load the saved output
+            data = np.load('./output/3AFC_SR_' + hearing_type + '_' + str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.npy', allow_pickle=True).item()
+            threshold_list = data['threshold']
+            fit_list = data['fit']
+            RPO_list = data['RPO_list']
+            PC_matrix = data['PC_matrix']
+            noise_list = data['noise_list']
+            fit_list = data['fit']
+            if 20 in RPO_list:
+                RPO_list.remove(20)
+
+            threshold = threshold_list[n]
+            plt.plot(PC_matrix[n, :, 0], 'o', color=colors[c])
+            plt.plot(PC_matrix[n, :, 1], 'o', color=colors[c])
+            avg = (PC_matrix[n, :, 0] + PC_matrix[n, :, 1])/2
+            y = fit_sigmoid(RPO_list, avg)
+            threshold = float(interpolate_threshold(RPO_list, y, threshold=66.667))
+            if threshold > 20:
+                plt.plot(y, label=hearing_type, color=colors[c])
+            else:
+                plt.plot(y, label= hearing_type + ',  T = '+ str(round(threshold,1)) + ' RPO', color=colors[c])
+            c += 1
+        plt.xlabel('Ripple density [RPO]', fontsize=16)
+        plt.xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
+        h2 = plt.hlines((100+33.33333)/2, -1, 20, colors='black', linestyles='dotted', label=str()) 
+        plt.ylim((30, 101))
+        plt.xlim((0, len(RPO_list)-1))
+        plt.ylabel('Percentage correct [%]', fontsize=16) 
+        plt.legend(fontsize=16)
+
+            
+        if save_bool:
+            fig6.savefig('./figures/spectrum/3AFC/SR_filtered_' +  str(phase_trials) + '_trials_withoutnoise.png')
+ 
+
+    if load_created_output_with_phase:
+        fig7 = plt.figure(figsize=(8, 6))
+        shift = 0.05
+        noise_list = [0.0]
+        hearing_type_list = ['NH', 'EH', 'EH (CS off)']
+        char_str = 'filter (window=33) and noise'
+        corner_labels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
+
+        # create colour map
+        n_lines = len(hearing_type_list)
+        cmap = mpl.colormaps['plasma']
+        colors = ['magenta', 'darkgreen', 'royalblue'] #cmap(np.linspace(0, 1, n_lines))
+        plt.subplots_adjust(wspace=0.11, left=0.1, right=0.97, bottom=0.15,  top=0.93, hspace=0.1)
+        import matplotlib.transforms as mtransforms # labeling axes
+        trans = mtransforms.ScaledTranslation(10/72, -5/72, fig7.dpi_scale_trans)
+        c=0
+        n=0
+        for hearing_type in hearing_type_list:
+            # Load the saved output
+            data = np.load('./output/3AFC_SR_' + hearing_type + '_' + str(phase_trials) + '_trials_' + char_str.replace(' ', '_') + 'list_'+ str(noise_list).replace(', ', '_') +'.npy', allow_pickle=True).item()
+            threshold_list = data['threshold']
+            fit_list = data['fit']
+            RPO_list = data['RPO_list']
+            PC_matrix = data['PC_matrix']
+            PC_separate_phase = data['PC_separate_phase']
+            noise_list = data['noise_list']
+            fit_list = data['fit']
+            if 20 in RPO_list:
+                RPO_list.remove(20)
+
+            threshold = threshold_list[n]
+            # plot mean
+            plt.plot(np.arange(len(RPO_list))-shift, PC_matrix[n, :, 0], 'o', color=colors[c])
+            plt.plot(np.arange(len(RPO_list))+shift, PC_matrix[n, :, 1], 'o', color=colors[c])
+            avg = (PC_matrix[n, :, 0] + PC_matrix[n, :, 1])/2
+            # plot standard deviation
+            for r in range(len(RPO_list)):
+                plt.scatter(r-shift*np.ones(30), PC_separate_phase[n, r, :, 0], color=colors[c], s=1)
+                plt.scatter(r+shift*np.ones(30), PC_separate_phase[n, r, :, 1], color=colors[c], s=1) #
+                # plt.errorbar(r-shift, PC_matrix[n, r, 0], yerr=np.std(PC_separate_phase[n, r, :, 0]), color=colors[c], markersize=5, capsize=3) # 
+                # plt.errorbar(r+shift, PC_matrix[n, r, 1], yerr=np.std(PC_separate_phase[n, r, :, 1]), color=colors[c], markersize=5, capsize=3)
+            # plot fit
+            y = fit_sigmoid(RPO_list, avg)
+            threshold = float(interpolate_threshold(RPO_list, y, threshold=66.667))
+            if threshold > 12:
+                plt.plot(y, label=hearing_type, color=colors[c])
+            else:
+                plt.plot(y, label= hearing_type + ',  T = '+ str(round(threshold,1)) + ' RPO', color=colors[c])
+            c += 1
+        plt.xlabel('Ripple density [RPO]', fontsize=16)
+        plt.xticks(range(len(RPO_list)), labels=[str((rpo)) for rpo in RPO_list], rotation=45)
+        h2 = plt.hlines((100+33.33333)/2, -1, 20, colors='black', linestyles='dotted', label=str()) 
+        plt.ylim((30, 103))
+        plt.xlim((0-2*shift, len(RPO_list)-1+ 2*shift))
+        plt.ylabel('Percentage correct [%]', fontsize=16) 
+        plt.legend(fontsize=16)
+
+        if save_bool:
+            fig7.savefig('./figures/spectrum/3AFC/SR_filtered_' +  str(phase_trials) + '_trials_with_scatter.png')
+
 
 
 

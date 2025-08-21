@@ -12,30 +12,32 @@ from SMRTvsSR import get_FFT_spectrum
 
 ####################### 
 # Spectral Ripple TRUE SOUND
-SR_sound_dir = './sounds/spectral ripple/'
-name_list = ['s_4.000_1', 'i1_4.000_1']
-label_list = ['standard', 'inverted']
-c_list = ['blue', 'red']
+SR_sound_dir = "C:\\Users\\ssmmartens\\OneDrive - LUMC\\Sounds\\Ripple\\" #'./sounds/spectral ripple/'
+density = '1'
+name_list = ['s_'+density+'.000_1', 'i1_'+density+'.000_1', 'i2_'+density+'.000_1']
+label_list = ['standard', 'inverted_1', 'inverted_2']
+c_list = ['blue', 'red', 'orange']
 # fig, axes = plt.subplots(2,1, sharex=True, sharey=True, figsize=(10, 5))
 fig = plt.figure(figsize=(8,3))
 plt.subplots_adjust(bottom=0.179)
 plt.xscale('log', base=2)
-plt.xticks([250, 500, 1000, 2000, 4000, 8000], labels=['250', '500', '1000', '2000', '4000', '8000'])
+plt.xticks([125, 250, 500, 1000, 2000, 4000, 8000], labels=['125', '250', '500', '1000', '2000', '4000', '8000'])
 for n, name in enumerate(name_list):
-    try:
-        outline_SR, frequency = get_FFT_spectrum(glob.glob(SR_sound_dir + '*' + name + '.*')[0])
-        plt.plot(frequency, outline_SR, label=label_list[n], color=c_list[n])
-        plt.title('Spectral ripple by Won et al. (4 RPO)', fontsize=18)
-        plt.ylabel('Normalized power', fontsize=18)
-        plt.xlabel('Frequency [Hz]', fontsize=18)
-        plt.xlim(100, 8e3)
-        plt.ylim(0,1)
-        plt.legend(fontsize=18)
-    except:
-        continue
+    # try:
+    outline_SR, frequency = get_FFT_spectrum(glob.glob(SR_sound_dir + '*' + name + '.*')[0])
+    # plt.plot(frequency, outline_SR, label=label_list[n], color=c_list[n])
+    plt.plot(frequency, outline_SR, label=name, color=c_list[n])
+    # plt.title('Spectral ripple by Won et al. (4 RPO)', fontsize=18)
+    plt.ylabel('Normalized power', fontsize=16)
+    plt.xlabel('Frequency [Hz]', fontsize=16)
+    plt.xlim(80, 8e3)
+    plt.ylim(0,1)
+    plt.legend(fontsize=16)
+    # except:
+        # continue
 
-fig.savefig('./sounds/SR_4RPO.png')
-# plt.show()
+fig.savefig('./sounds/SR_'+density+'RPO_'+ str(len(name_list))+'.png')
+plt.show()
 
 # # FAKE SOUND
 # mod_depth = 30
